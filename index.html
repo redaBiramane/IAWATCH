@@ -13,11 +13,221 @@
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  .glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+  .input-field {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    margin-bottom: 16px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+  }
+  .input-field:focus {
+    outline: none;
+    border-color: #009597;
+    box-shadow: 0 0 0 3px rgba(0, 149, 151, 0.1);
+  }
+  .btn-primary {
+    background: #009597;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .btn-primary:hover {
+    background: #006466;
+    transform: translateY(-1px);
+  }
+  .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  .admin-table th, .admin-table td {
+    text-align: left;
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+  }
+</style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
 const { useState, useEffect } = React;
+
+// --- Supabase Config ---
+const SUPABASE_URL = "https://lsspomjucstlodqjvqqh.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxzc3BvbWp1Y3N0bG9kcWp2cXFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNjM5NTAsImV4cCI6MjA5MzczOTk1MH0.IbJrk4GHsuRzXyTK3E_t9_cjkWEU0ziJTbqAMU0CLyo";
+const supabaseClient = (SUPABASE_URL !== "YOUR_SUPABASE_URL") 
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+
+const Login = ({ onLogin }) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [mode, setMode] = useState("login");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    
+    if (!supabaseClient) {
+      setError("Veuillez configurer l'URL et la clé Supabase dans index.html");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error } = mode === "login" 
+        ? await supabaseClient.auth.signInWithPassword({ email, password })
+        : await supabaseClient.auth.signUp({ email, password });
+
+      if (error) throw error;
+      if (data.user) onLogin(data.user);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "linear-gradient(135deg, #071621 0%, #009597 100%)",
+      padding: "20px",
+      fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif"
+    }}>
+      <div className="glass" style={{
+        width: "100%",
+        maxWidth: "400px",
+        padding: "40px",
+        borderRadius: "20px",
+        boxShadow: "0 20px 40px rgba(0,0,0,0.3)",
+        textAlign: "center"
+      }}>
+        <div style={{ fontSize: "40px", marginBottom: "10px" }}>📡</div>
+        <h1 style={{ fontSize: "24px", fontWeight: "800", color: "#071621", marginBottom: "8px" }}>IA WATCH</h1>
+        <p style={{ color: "#666E8A", marginBottom: "32px", fontSize: "14px" }}>
+          {mode === "login" ? "Connectez-vous pour accéder au rapport" : "Créez un compte"}
+        </p>
+
+        <form onSubmit={handleSubmit}>
+          <input 
+            type="email" 
+            className="input-field" 
+            placeholder="Email" 
+            required 
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <input 
+            type="password" 
+            className="input-field" 
+            placeholder="Mot de passe" 
+            required 
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          {error && <div style={{ color: "#F47682", fontSize: "12px", marginBottom: "16px", textAlign: "left" }}>{error}</div>}
+          <button type="submit" className="btn-primary" style={{ width: "100%" }} disabled={loading}>
+            {loading ? "Chargement..." : mode === "login" ? "Se connecter" : "S'inscrire"}
+          </button>
+        </form>
+
+        <div style={{ marginTop: "24px", fontSize: "13px", color: "#666E8A" }}>
+          {mode === "login" ? (
+            <>Pas encore de compte ? <a onClick={() => setMode("signup")} style={{ color: "#009597", fontWeight: "600", cursor: "pointer" }}>S'inscrire</a></>
+          ) : (
+            <>Déjà un compte ? <a onClick={() => setMode("login")} style={{ color: "#009597", fontWeight: "600", cursor: "pointer" }}>Se connecter</a></>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AdminDashboard = ({ user, onBack }) => {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (!supabaseClient) return;
+      try {
+        const { data, error } = await supabaseClient.from('profiles').select('*');
+        if (!error) setUsers(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  return (
+    <div style={{ padding: "40px", maxWidth: "1000px", margin: "0 auto", fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif" }}>
+      <button onClick={onBack} style={{ marginBottom: "20px", cursor: "pointer", background: "none", border: "none", color: "#009597", fontWeight: "700", fontSize: "16px" }}>
+        ← Retour au rapport
+      </button>
+      <h2 style={{ fontSize: "28px", fontWeight: "800", color: "#071621", marginBottom: "24px" }}>Tableau de bord Administrateur</h2>
+      
+      <div className="glass" style={{ padding: "32px", borderRadius: "16px", border: "1px solid #e0e2e8", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
+        <h3 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "#071621" }}>Utilisateurs inscrits (Base de données)</h3>
+        {loading ? (
+          <p>Chargement des données...</p>
+        ) : users.length > 0 ? (
+          <div style={{ overflowX: "auto" }}>
+            <table className="admin-table">
+              <thead>
+                <tr style={{ background: "#f8f9fa" }}>
+                  <th style={{ borderRadius: "8px 0 0 8px" }}>Email</th>
+                  <th>Date d'inscription</th>
+                  <th style={{ borderRadius: "0 8px 8px 0" }}>Rôle</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((u, i) => (
+                  <tr key={i}>
+                    <td style={{ fontWeight: "600" }}>{u.email}</td>
+                    <td>{new Date(u.created_at).toLocaleDateString()}</td>
+                    <td><span style={{ padding: "4px 12px", borderRadius: "12px", background: u.is_admin ? "#00959720" : "#eee", color: u.is_admin ? "#009597" : "#666", fontSize: "11px", fontWeight: "700" }}>{u.is_admin ? "ADMIN" : "USER"}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div style={{ padding: "40px", textAlign: "center", color: "#666E8A", background: "#fcfcfc", borderRadius: "12px", border: "1px dashed #ddd" }}>
+            <div style={{ fontSize: "32px", marginBottom: "16px" }}>👥</div>
+            <p style={{ fontWeight: "600", color: "#071621" }}>Aucune donnée d'utilisateur trouvée.</p>
+            <p style={{ fontSize: "13px", marginTop: "8px", maxWidth: "400px", margin: "8px auto" }}>
+              Pour afficher les utilisateurs ici, assurez-vous d'avoir créé une table <code>profiles</code> dans Supabase avec les colonnes <code>email</code>, <code>created_at</code>, et <code>is_admin</code>.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 
 const TEAL = "#009597";
@@ -326,10 +536,42 @@ const sourceBrands = [
 ];
 
 function App() {
+  const [session, setSession] = useState(null);
+  const [isAdminView, setIsAdminView] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [openAxe, setOpenAxe] = useState(null);
   const [section, setSection] = useState("overview");
   const [openGroup, setOpenGroup] = useState(null);
+
+  useEffect(() => {
+    if (supabaseClient) {
+      supabaseClient.auth.getSession().then(({ data: { session } }) => {
+        setSession(session);
+      });
+
+      const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+        setSession(session);
+      });
+
+      return () => subscription.unsubscribe();
+    }
+  }, []);
+
+  const handleLogout = async () => {
+    if (supabaseClient) {
+      await supabaseClient.auth.signOut();
+      setSession(null);
+      setIsAdminView(false);
+    }
+  };
+
+  if (!session && (SUPABASE_URL !== "YOUR_SUPABASE_URL")) {
+    return <Login onLogin={(user) => setSession({ user })} />;
+  }
+
+  if (isAdminView) {
+    return <AdminDashboard user={session?.user} onBack={() => setIsAdminView(false)} />;
+  }
 
   if (showWelcome) {
     return (
@@ -340,6 +582,15 @@ function App() {
         display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
         padding: "40px 20px",
       }}>
+        {/* Top bar with logout */}
+        <div style={{ position: "absolute", top: 20, right: 20 }}>
+          {session && (
+            <button onClick={handleLogout} style={{ background: "none", border: "none", color: SLATE, cursor: "pointer", fontSize: "12px", fontWeight: "600" }}>
+              Déconnexion
+            </button>
+          )}
+        </div>
+
         {/* Title block */}
         <div style={{ textAlign: "center", maxWidth: 600, marginBottom: 12 }}>
           <div style={{
@@ -417,21 +668,34 @@ function App() {
         </div>
 
         {/* CTA */}
-        <button
-          onClick={() => setShowWelcome(false)}
-          style={{
-            padding: "14px 44px", borderRadius: 10,
-            border: "none", background: TEAL, color: "#fff",
-            fontSize: 15, fontWeight: 700, cursor: "pointer",
-            letterSpacing: "0.04em",
-            boxShadow: `0 4px 20px ${TEAL}40`,
-            transition: "all 0.25s ease",
-          }}
-          onMouseEnter={e => { e.target.style.transform = "translateY(-2px)"; e.target.style.boxShadow = `0 8px 28px ${TEAL}50`; }}
-          onMouseLeave={e => { e.target.style.transform = "translateY(0)"; e.target.style.boxShadow = `0 4px 20px ${TEAL}40`; }}
-        >
-          Explorer →
-        </button>
+        <div style={{ display: "flex", gap: "16px" }}>
+          <button
+            onClick={() => setShowWelcome(false)}
+            style={{
+              padding: "14px 44px", borderRadius: 10,
+              border: "none", background: TEAL, color: "#fff",
+              fontSize: 15, fontWeight: 700, cursor: "pointer",
+              letterSpacing: "0.04em",
+              boxShadow: `0 4px 20px ${TEAL}40`,
+              transition: "all 0.25s ease",
+            }}
+          >
+            Explorer →
+          </button>
+          
+          {session?.user?.email?.includes('admin') && (
+            <button
+              onClick={() => setIsAdminView(true)}
+              style={{
+                padding: "14px 24px", borderRadius: 10,
+                border: `2px solid ${TEAL}`, background: "white", color: TEAL,
+                fontSize: 15, fontWeight: 700, cursor: "pointer",
+              }}
+            >
+              Admin Dashboard
+            </button>
+          )}
+        </div>
 
         {/* Footer */}
       </div>
@@ -455,7 +719,7 @@ function App() {
         position: "sticky", top: 0, zIndex: 100,
         backdropFilter: "blur(12px)", boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
       }}>
-        <div>
+        <div onClick={() => setShowWelcome(true)} style={{ cursor: "pointer" }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: TEAL, letterSpacing: "0.15em", textTransform: "uppercase" }}>
             Sofinco / MCD
           </div>
@@ -464,12 +728,12 @@ function App() {
           </div>
         </div>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-          <button onClick={() => setShowWelcome(true)} style={{
-            padding: "6px 10px", borderRadius: 6, border: "none", cursor: "pointer",
-            fontSize: 14, fontWeight: 600, background: "#ECEDF0", color: SLATE,
-            transition: "all 0.2s ease", lineHeight: 1, marginRight: 2,
-          }} title="Accueil">
-            ⌂
+          <button onClick={handleLogout} style={{
+            padding: "6px 12px", borderRadius: 6, border: "1px solid #ddd", cursor: "pointer",
+            fontSize: 12, fontWeight: 600, background: "white", color: SLATE,
+            marginRight: 10
+          }}>
+            Déconnexion
           </button>
           {[
             { key: "overview", label: "Synthèse" },
@@ -852,7 +1116,8 @@ function App() {
   );
 }
 
-ReactDOM.render(<App />, document.getElementById('root'));
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
 </script>
 </body>
 </html>
