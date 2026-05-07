@@ -751,6 +751,17 @@ function App() {
               {label}
             </button>
           ))}
+          
+          {/* Added Admin link to Header */}
+          {session?.user?.email?.includes('admin') && (
+            <button onClick={() => setIsAdminView(true)} style={{
+              padding: "6px 14px", borderRadius: 6, border: `1.5px solid ${TEAL}`, cursor: "pointer",
+              fontSize: 12, fontWeight: 700, background: "white", color: TEAL,
+              marginLeft: 8
+            }}>
+              Admin ⚙️
+            </button>
+          )}
         </div>
       </div>
 
