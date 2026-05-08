@@ -6,22 +6,16 @@
 <title>📡 IA Watch — Sofinco / MCD — Mai 2026</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
-  a:hover { opacity: 0.8; }
-  button:hover { opacity: 0.9; }
-  .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; overflow-x: hidden; }
+  .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
   .input-field { width: 100%; padding: 12px 16px; border-radius: 8px; border: 1px solid #e0e0e0; margin-bottom: 16px; font-size: 14px; }
-  .btn-primary { background: #009597; color: white; padding: 12px 24px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; }
-  .admin-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-  .admin-table th, .admin-table td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
-  .admin-tabs { display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 1px solid #e0e2e8; padding-bottom: 10px; }
-  .admin-tab-btn { padding: 8px 16px; border-radius: 8px; border: none; background: transparent; color: #666E8A; font-weight: 600; cursor: pointer; }
+  .btn-primary { background: #009597; color: white; padding: 12px 24px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; transition: all 0.3s ease; }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,149,151,0.4); }
+  .admin-card { background: white; padding: 25px; border-radius: 16px; border: 1px solid #e0e2e8; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+  .admin-tab-btn { padding: 10px 20px; border-radius: 8px; border: none; background: transparent; color: #666E8A; font-weight: 700; cursor: pointer; transition: 0.2s; }
   .admin-tab-btn.active { background: #00959715; color: #009597; }
-  .admin-card { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e0e2e8; margin-bottom: 15px; }
-  .form-group { margin-bottom: 20px; }
-  .form-group label { display: block; font-size: 11px; font-weight: 700; color: #071621; margin-bottom: 6px; text-transform: uppercase; }
-  .form-control { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #e0e2e8; font-family: inherit; font-size: 14px; }
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes float { 0% { transform: translate(0, 0); } 100% { transform: translate(30px, 30px); } }
 </style>
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -40,8 +34,6 @@ const NAVY = "#071621";
 const GREEN = "#2D8E57";
 const ORANGE = "#E07A2F";
 const CORAL = "#F47682";
-const BLUE = "#3A7CC3";
-const VIOLET = "#7030A0";
 
 // --- Supabase Config ---
 const SUPABASE_URL = "__SUPABASE_URL__"; 
@@ -50,38 +42,14 @@ const supabaseClient = (SUPABASE_URL && SUPABASE_URL !== "__SUPABASE_URL__")
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
 
-// --- Data Defaults ---
-const kpis = [
-  { value: "$2 520 Mds", label: "Dépenses IA mondiales 2026", sub: "+44% YoY", source: "Gartner" },
-  { value: "28%", label: "Taux de succès ROI", sub: "use cases I&O", source: "Gartner" },
-  { value: "17%", label: "Organisations ayant déployé des agents", sub: "vs 60%+ prévu sous 2 ans", source: "Gartner" },
-  { value: "50%", label: "CEOs dont le poste dépend du succès IA", sub: "72% sont décideurs principaux", source: "BCG" },
-];
-
-const axes = [
-  {
-    id: 1, color: TEAL, icon: "🤖", tag: "AXE 1", title: "Agents autonomes & gouvernance",
-    assertion: "60% d'intention de déploiement mais 17% de réalité — la gouvernance devient le facteur limitant",
-    bullets: ["BCG AI Radar 2026 : 30% du budget IA 2026 alloué à l'agentique", "Bain : valeur se mesure en contexte retenu", "Google Cloud Next 2026 : focus sur gouvernance"],
-    implication: "Poser les fondations avant la prolifération.",
-    sources: "BCG, AI Radar 2026"
-  }
-];
-
-const perspectives = [
-  { type: "Hypothèse", text: "Le creux de désillusion se prolonge au S2 2026.", color: ORANGE },
-  { type: "Signal faible", text: "Deskilling silencieux dans les fonctions support.", color: CORAL }
-];
-
 // --- Sub-Components ---
-const KPICard = ({ value, label, sub, source, delay }) => {
+const KPICard = ({ value, label, delay }) => {
   const [visible, setVisible] = useState(false);
-  useEffect(() => { setTimeout(() => setVisible(true), delay); }, [delay]);
+  useEffect(() => { setTimeout(() => setVisible(true), delay); }, []);
   return (
-    <div style={{ flex: "1 1 0", minWidth: 140, textAlign: "center", padding: "20px 12px", opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(20px)", transition: "all 0.6s ease" }}>
-      <div style={{ fontSize: 28, fontWeight: 800, color: TEAL }}>{value}</div>
-      <div style={{ fontSize: 11, fontWeight: 700, color: DARK_TEAL, marginTop: 4 }}>{label}</div>
-      <div style={{ fontSize: 9, color: SLATE }}>{sub}</div>
+    <div style={{ flex: "1 1 0", minWidth: 150, textAlign: "center", padding: "20px", opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(20px)", transition: "all 0.8s ease" }}>
+      <div style={{ fontSize: 32, fontWeight: 900, color: TEAL }}>{value}</div>
+      <div style={{ fontSize: 11, fontWeight: 700, color: SLATE, marginTop: 5 }}>{label}</div>
     </div>
   );
 };
@@ -89,20 +57,20 @@ const KPICard = ({ value, label, sub, source, delay }) => {
 const AxeCard = ({ axe }) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div onClick={() => setIsOpen(!isOpen)} style={{ background: "#fff", borderRadius: 12, border: `1.5px solid ${isOpen ? axe.color : "#eee"}`, padding: "20px", cursor: "pointer", transition: "all 0.3s ease" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
-        <div style={{ fontSize: 24, background: `${axe.color}15`, padding: 10, borderRadius: 10 }}>{axe.icon}</div>
+    <div onClick={() => setIsOpen(!isOpen)} style={{ background: "#fff", borderRadius: 16, border: `1.5px solid ${isOpen ? axe.color : "#eee"}`, padding: "24px", cursor: "pointer", transition: "0.3s" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+        <div style={{ fontSize: 28, background: `${axe.color}15`, padding: 12, borderRadius: 12 }}>{axe.icon}</div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: axe.color }}>{axe.tag}</div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: NAVY }}>{axe.title}</div>
+          <div style={{ fontSize: 10, fontWeight: 900, color: axe.color, textTransform: "uppercase" }}>{axe.tag}</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: NAVY }}>{axe.title}</div>
         </div>
       </div>
       {isOpen && (
-        <div style={{ marginTop: 15, paddingTop: 15, borderTop: "1px solid #eee" }}>
-          {axe.bullets.map((b, i) => <div key={i} style={{ fontSize: 13, marginBottom: 8 }}>• {b}</div>)}
-          <div style={{ background: `${axe.color}08`, padding: 12, borderRadius: 8, marginTop: 10 }}>
-             <div style={{ fontSize: 10, fontWeight: 800, color: axe.color }}>IMPLICATION</div>
-             <div style={{ fontSize: 13 }}>{axe.implication}</div>
+        <div style={{ marginTop: 20, paddingTop: 20, borderTop: "1px solid #eee", animation: "fadeInUp 0.3s ease" }}>
+          {axe.bullets.map((b, i) => <div key={i} style={{ fontSize: 14, marginBottom: 10, lineHeight: 1.5 }}>• {b}</div>)}
+          <div style={{ background: `${axe.color}08`, padding: 15, borderRadius: 10, marginTop: 15 }}>
+             <div style={{ fontSize: 10, fontWeight: 800, color: axe.color, marginBottom: 5 }}>IMPLICATION STRATÉGIQUE</div>
+             <div style={{ fontSize: 14, fontWeight: 500 }}>{axe.implication}</div>
           </div>
         </div>
       )}
@@ -110,39 +78,36 @@ const AxeCard = ({ axe }) => {
   );
 };
 
-const PerspectiveCard = ({ p }) => (
-  <div style={{ background: "white", padding: "20px", borderRadius: "12px", borderLeft: `4px solid ${p.color}`, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-    <div style={{ fontSize: "10px", fontWeight: "800", color: p.color, marginBottom: "8px", textTransform: "uppercase" }}>{p.type}</div>
-    <div style={{ fontSize: "14px", color: NAVY, lineHeight: "1.5" }}>{p.text}</div>
+// --- Page: Landing ---
+const WelcomeScreen = ({ onExplore, siteData }) => (
+  <div style={{ minHeight: "100vh", background: "#071621", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 20px", textAlign: "center", position: "relative", overflow: "hidden" }}>
+    <div style={{ position: "absolute", top: "-10%", left: "-10%", width: "50%", height: "50%", background: "radial-gradient(circle, rgba(0,149,151,0.15) 0%, rgba(0,0,0,0) 70%)", animation: "float 15s infinite alternate" }}></div>
+    <div style={{ position: "absolute", bottom: "-10%", right: "-10%", width: "60%", height: "60%", background: "radial-gradient(circle, rgba(0,149,151,0.1) 0%, rgba(0,0,0,0) 70%)", animation: "float 20s infinite alternate-reverse" }}></div>
+    
+    <div style={{ position: "relative", zIndex: 1, maxWidth: "1000px" }}>
+      <div style={{ fontSize: 70, marginBottom: 20, animation: "fadeInUp 0.8s ease" }}>{siteData.settings.emoji}</div>
+      <h1 style={{ fontSize: "clamp(45px, 8vw, 80px)", fontWeight: 900, lineHeight: 1.1, marginBottom: 25, animation: "fadeInUp 1s ease" }}>
+        <span style={{ color: TEAL }}>{siteData.settings.title.split(' ')[0]}</span> {siteData.settings.title.split(' ').slice(1).join(' ')}
+      </h1>
+      <p style={{ fontSize: 24, color: "#A0AEC0", maxWidth: 750, margin: "0 auto 50px", lineHeight: 1.5, animation: "fadeInUp 1.2s ease" }}>{siteData.settings.subtitle}</p>
+      
+      <div style={{ display: "flex", gap: 20, justifyContent: "center", marginBottom: "80px", animation: "fadeInUp 1.4s ease" }}>
+        <button onClick={onExplore} style={{ padding: "18px 45px", borderRadius: 14, background: TEAL, color: "white", border: "none", fontWeight: 800, fontSize: 18, cursor: "pointer", boxShadow: `0 0 30px ${TEAL}60` }}>Explorer le Rapport</button>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 25, animation: "fadeInUp 1.6s ease" }}>
+        {siteData.kpis.slice(0, 4).map((k, i) => (
+          <div key={i} style={{ padding: 25, background: "rgba(255,255,255,0.03)", borderRadius: 20, border: "1px solid rgba(255,255,255,0.05)" }}>
+            <div style={{ fontSize: 28, fontWeight: 900, color: TEAL, marginBottom: 8 }}>{k.value}</div>
+            <div style={{ fontSize: 12, color: "#CBD5E0", fontWeight: 600 }}>{k.label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
   </div>
 );
 
-const Overview = ({ siteData }) => (
-  <div style={{ animation: "fadeIn 0.5s ease" }}>
-    <div style={{ background: "#fff", padding: "32px", borderRadius: "16px", marginBottom: "24px", border: "1px solid #E0E2E8" }}>
-      <h2 style={{ fontSize: "24px", fontWeight: "800", color: NAVY, marginBottom: "16px" }}>Synthèse Stratégique</h2>
-      <p style={{ color: SLATE, lineHeight: "1.6" }}>Analyse des tendances critiques pour le S1 2026.</p>
-    </div>
-    <div style={{ display: "flex", flexWrap: "wrap", background: "#fff", borderRadius: "16px", padding: "10px", boxShadow: "0 10px 30px rgba(0,0,0,0.1)", marginBottom: "30px" }}>
-      {siteData.kpis.map((k, i) => <KPICard key={i} {...k} delay={i * 100} />)}
-    </div>
-  </div>
-);
-
-// --- Auth Hook ---
-const useAuth = () => {
-  const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    if (!supabaseClient) { setLoading(false); return; }
-    supabaseClient.auth.getSession().then(({ data: { session } }) => { setSession(session); setLoading(false); });
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event, session) => { setSession(session); });
-    return () => subscription.unsubscribe();
-  }, []);
-  return { session, loading };
-};
-
-// --- Page Components ---
+// --- Page: Login ---
 const LoginPage = ({ onBack }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -150,124 +115,115 @@ const LoginPage = ({ onBack }) => {
   const handleLogin = async (e) => {
     e.preventDefault();
     const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    if (error) setError(error.message);
+    if (error) setError("Identifiants invalides ou erreur de connexion.");
   };
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#071621", padding: "20px" }}>
-      <div style={{ background: "white", padding: "40px", borderRadius: "20px", width: "100%", maxWidth: "400px" }}>
-        <button onClick={onBack} style={{ background: "none", border: "none", color: TEAL, cursor: "pointer", marginBottom: "20px", fontWeight: "700" }}>← Retour</button>
-        <h2 style={{ marginBottom: "24px", textAlign: "center" }}>Connexion Membre</h2>
+      <div style={{ background: "white", padding: "40px", borderRadius: "24px", width: "100%", maxWidth: "420px", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }}>
+        <button onClick={onBack} style={{ background: "none", border: "none", color: TEAL, cursor: "pointer", marginBottom: "25px", fontWeight: "800", fontSize: 14 }}>← RETOUR</button>
+        <h2 style={{ fontSize: 28, fontWeight: 900, color: NAVY, marginBottom: "10px", textAlign: "center" }}>Connexion</h2>
+        <p style={{ textAlign: "center", color: SLATE, marginBottom: "30px", fontSize: 14 }}>Entrez vos accès pour consulter le rapport IA.</p>
         <form onSubmit={handleLogin}>
-          <input className="input-field" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
-          <input className="input-field" type="password" placeholder="Mot de passe" value={password} onChange={e => setPassword(e.target.value)} required />
-          {error && <div style={{ color: CORAL, fontSize: "12px", marginBottom: "15px" }}>{error}</div>}
-          <button type="submit" className="btn-primary" style={{ width: "100%" }}>Se Connecter</button>
+          <div style={{ marginBottom: 15 }}><label style={{ fontSize: 11, fontWeight: 800, color: NAVY }}>EMAIL</label><input className="input-field" type="email" value={email} onChange={e => setEmail(e.target.value)} required /></div>
+          <div style={{ marginBottom: 20 }}><label style={{ fontSize: 11, fontWeight: 800, color: NAVY }}>MOT DE PASSE</label><input className="input-field" type="password" value={password} onChange={e => setPassword(e.target.value)} required /></div>
+          {error && <div style={{ color: CORAL, fontSize: 13, marginBottom: 20, fontWeight: 600 }}>⚠️ {error}</div>}
+          <button type="submit" className="btn-primary" style={{ width: "100%", padding: "15px" }}>SE CONNECTER</button>
         </form>
       </div>
     </div>
   );
 };
 
-const AdminDashboard = ({ user, onBack, siteData, onUpdateData }) => {
-  const [activeTab, setActiveTab] = useState("stats");
-  const [users, setUsers] = useState([]);
-  useEffect(() => {
-    const fetchUsers = async () => {
-      const { data } = await supabaseClient.from('profiles').select('*');
-      if (data) setUsers(data);
-    };
-    fetchUsers();
-  }, []);
-  return (
-    <div style={{ padding: "40px", maxWidth: "1200px", margin: "0 auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "30px" }}>
-        <button onClick={onBack} className="btn-primary">← Retour</button>
-        <h2 style={{ fontWeight: 800 }}>Administration</h2>
-        <div style={{ fontSize: 12, fontWeight: 700 }}>{user.email}</div>
-      </div>
-      <div className="admin-tabs">
-        <button className={`admin-tab-btn ${activeTab === 'stats' ? 'active' : ''}`} onClick={() => setActiveTab('stats')}>Stats</button>
-        <button className={`admin-tab-btn ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>Users</button>
-      </div>
-      {activeTab === 'stats' && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-          <div className="admin-card"><h3>Total Users</h3><p style={{ fontSize: 40, fontWeight: 800 }}>{users.length}</p></div>
-          <div className="admin-card"><h3>Admins</h3><p style={{ fontSize: 40, fontWeight: 800 }}>{users.filter(u => u.is_admin).length}</p></div>
-        </div>
-      )}
-      {activeTab === 'users' && (
-        <div className="admin-card">
-          <table className="admin-table">
-            <thead><tr><th>Email</th><th>Admin</th></tr></thead>
-            <tbody>{users.map((u, i) => <tr key={i}><td>{u.email}</td><td>{u.is_admin ? "✅" : "❌"}</td></tr>)}</tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const WelcomeScreen = ({ onExplore, siteData }) => (
-  <div style={{ minHeight: "100vh", background: "#071621", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px", textAlign: "center", overflow: "hidden" }}>
-    <div style={{ animation: "fadeInUp 0.8s ease" }}>
-      <div style={{ fontSize: 60, marginBottom: 20 }}>{siteData.settings.emoji}</div>
-      <h1 style={{ fontSize: "clamp(40px, 8vw, 72px)", fontWeight: 900, marginBottom: 20 }}>
-        <span style={{ color: TEAL }}>{siteData.settings.title.split(' ')[0]}</span> {siteData.settings.title.split(' ').slice(1).join(' ')}
-      </h1>
-      <p style={{ fontSize: 22, color: "#A0AEC0", maxWidth: 700, margin: "0 auto 40px" }}>{siteData.settings.subtitle}</p>
-      <div style={{ display: "flex", gap: 20, justifyContent: "center" }}>
-        <button onClick={onExplore} style={{ padding: "16px 40px", borderRadius: 12, background: TEAL, color: "white", border: "none", fontWeight: 700, cursor: "pointer", boxShadow: `0 0 20px ${TEAL}60` }}>Explorer le Rapport</button>
-      </div>
-    </div>
-  </div>
-);
-
 // --- Main App ---
 const App = () => {
-  const { session, loading: authLoading } = useAuth();
+  const [session, setSession] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [showWelcome, setShowWelcome] = useState(true);
   const [isAdminView, setIsAdminView] = useState(false);
   const [section, setSection] = useState("overview");
-  const [siteData, setSiteData] = useState({ kpis, axes, perspectives, settings: { title: "IA WATCH", emoji: "📡", subtitle: "Impact de l'IA sur l'économie..." } });
+  const [siteData, setSiteData] = useState({ kpis: [], axes: [], perspectives: [], settings: { title: "IA WATCH", emoji: "📡", subtitle: "Analyse stratégique de l'IA." } });
 
   useEffect(() => {
+    if (!supabaseClient) { setAuthLoading(false); return; }
+    supabaseClient.auth.getSession().then(({ data: { session } }) => { setSession(session); setAuthLoading(false); });
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_e, s) => setSession(s));
+    
     const fetchSite = async () => {
-      if (!supabaseClient) return;
       const { data } = await supabaseClient.from('site_content').select('*');
       if (data) {
         const newData = { ...siteData };
-        data.forEach(item => { if (newData[item.key]) newData[item.key] = item.value; if (item.key === 'settings') newData.settings = item.value; });
+        data.forEach(item => { newData[item.key] = item.value; });
         setSiteData(newData);
       }
     };
     fetchSite();
+    return () => subscription.unsubscribe();
   }, []);
 
   if (showWelcome) return <WelcomeScreen onExplore={() => setShowWelcome(false)} siteData={siteData} />;
-  if (authLoading) return <div style={{ minHeight: "100vh", background: "#071621", display: "flex", alignItems: "center", justifyContent: "center", color: "white" }}>Chargement...</div>;
+  if (authLoading) return <div style={{ minHeight: "100vh", background: "#071621", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 20, fontWeight: 800 }}>IA WATCH CHARGEMENT...</div>;
   if (!session) return <LoginPage onBack={() => setShowWelcome(true)} />;
-  if (isAdminView && session.user.email.includes('admin')) return <AdminDashboard user={session.user} onBack={() => setIsAdminView(false)} siteData={siteData} onUpdateData={setSiteData} />;
+  
+  if (isAdminView && session.user.email.includes('admin')) {
+    return (
+      <div style={{ padding: "40px", maxWidth: "1200px", margin: "0 auto" }}>
+        <button onClick={() => setIsAdminView(false)} className="btn-primary" style={{ marginBottom: 30 }}>← Retour au Rapport</button>
+        <h1 style={{ fontSize: 32, fontWeight: 900, marginBottom: 30 }}>Console Admin</h1>
+        <div className="admin-card">
+          <h3 style={{ marginBottom: 20 }}>Paramètres du Site</h3>
+          <input className="input-field" defaultValue={siteData.settings.title} id="title-in" placeholder="Titre" />
+          <button className="btn-primary" onClick={async () => {
+             const title = document.getElementById('title-in').value;
+             const settings = { ...siteData.settings, title };
+             setSiteData({ ...siteData, settings });
+             await supabaseClient.from('site_content').upsert({ key: 'settings', value: settings });
+             alert("Titre mis à jour !");
+          }}>Sauvegarder</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F6F8", fontFamily: "inherit" }}>
-      <div style={{ background: "#fff", borderBottom: `2px solid ${TEAL}`, padding: "16px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, zIndex: 100 }}>
+    <div style={{ minHeight: "100vh", background: "#F5F6F8" }}>
+      <header style={{ background: "#fff", borderBottom: `2px solid ${TEAL}`, padding: "15px 30px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
         <div onClick={() => setShowWelcome(true)} style={{ cursor: "pointer" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: TEAL }}>SOFINCO / MCD</div>
-          <div style={{ fontSize: 17, fontWeight: 700 }}>{siteData.settings.title} — 2026</div>
+          <div style={{ fontSize: 10, fontWeight: 800, color: TEAL }}>SOFINCO / MCD</div>
+          <div style={{ fontSize: 18, fontWeight: 800 }}>{siteData.settings.title} — 2026</div>
         </div>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          {session.user.email.includes('admin') && <button onClick={() => setIsAdminView(true)} style={{ background: `${TEAL}15`, color: TEAL, border: "none", padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>Admin ⚙️</button>}
-          <button onClick={() => supabaseClient.auth.signOut()} style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #ddd", fontSize: 12, cursor: "pointer" }}>Déconnexion</button>
+        <nav style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          {session.user.email.includes('admin') && <button onClick={() => setIsAdminView(true)} style={{ background: `${TEAL}15`, color: TEAL, border: "none", padding: "8px 15px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 800 }}>ADMIN ⚙️</button>}
           {["overview", "axes", "perspectives"].map(s => (
-            <button key={s} onClick={() => setSection(s)} style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: section === s ? TEAL : "transparent", color: section === s ? "#fff" : SLATE, fontWeight: 700, cursor: "pointer" }}>{s.toUpperCase()}</button>
+            <button key={s} onClick={() => setSection(s)} style={{ padding: "10px 18px", borderRadius: 10, border: "none", background: section === s ? TEAL : "transparent", color: section === s ? "#fff" : SLATE, fontWeight: 800, cursor: "pointer", textTransform: "uppercase", fontSize: 12 }}>{s}</button>
           ))}
-        </div>
-      </div>
-      <div style={{ padding: "40px 24px", maxWidth: 1000, margin: "0 auto" }}>
-        {section === "overview" && <Overview siteData={siteData} />}
-        {section === "axes" && <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>{siteData.axes.map(axe => <AxeCard key={axe.id} axe={axe} />)}</div>}
-        {section === "perspectives" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>{siteData.perspectives.map((p, i) => <PerspectiveCard key={i} p={p} />)}</div>}
-      </div>
+          <button onClick={() => supabaseClient.auth.signOut()} style={{ background: "#eee", border: "none", padding: "10px 15px", borderRadius: 10, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>SORTIR</button>
+        </nav>
+      </header>
+
+      <main style={{ padding: "40px 20px", maxWidth: "1100px", margin: "0 auto" }}>
+        {section === "overview" && (
+          <div style={{ animation: "fadeInUp 0.5s ease" }}>
+            <div className="admin-card" style={{ background: NAVY, color: "white" }}>
+              <h2 style={{ fontSize: 26, fontWeight: 900, marginBottom: 15 }}>Synthèse du Rapport</h2>
+              <p style={{ color: "#A0AEC0", lineHeight: 1.6 }}>Analyse consolidée des 50 dernières publications stratégiques sur l'IA.</p>
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", background: "#fff", borderRadius: 20, padding: 10, boxShadow: "0 10px 30px rgba(0,0,0,0.05)", marginBottom: 30 }}>
+              {siteData.kpis.map((k, i) => <KPICard key={i} {...k} delay={i * 100} />)}
+            </div>
+          </div>
+        )}
+        {section === "axes" && <div style={{ display: "flex", flexDirection: "column", gap: 25 }}>{siteData.axes.map(axe => <AxeCard key={axe.id} axe={axe} />)}</div>}
+        {section === "perspectives" && (
+           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 25 }}>
+             {siteData.perspectives.map((p, i) => (
+               <div key={i} style={{ background: "white", padding: 30, borderRadius: 20, borderLeft: `5px solid ${p.color}`, boxShadow: "0 5px 15px rgba(0,0,0,0.04)" }}>
+                 <div style={{ fontSize: 11, fontWeight: 900, color: p.color, marginBottom: 10 }}>{p.type.toUpperCase()}</div>
+                 <p style={{ fontSize: 15, lineHeight: 1.6, fontWeight: 500 }}>{p.text}</p>
+               </div>
+             ))}
+           </div>
+        )}
+      </main>
     </div>
   );
 };
