@@ -59,6 +59,53 @@
     padding: 12px;
     border-bottom: 1px solid #eee;
   }
+  .admin-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    border-bottom: 1px solid #e0e2e8;
+    padding-bottom: 10px;
+  }
+  .admin-tab-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: #666E8A;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .admin-tab-btn.active {
+    background: #00959715;
+    color: #009597;
+  }
+  .form-group {
+    margin-bottom: 20px;
+  }
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #071621;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .form-control {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #e0e2e8;
+    font-family: inherit;
+    font-size: 14px;
+  }
+  .admin-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e0e2e8;
+    margin-bottom: 15px;
+  }
 </style>
 </head>
 <body>
@@ -164,44 +211,92 @@ const Login = ({ onLogin }) => {
   );
 };
 
-const AdminDashboard = ({ user, onBack }) => {
+const AdminDashboard = ({ user, onBack, siteData, onUpdateData }) => {
+  const [activeTab, setActiveTab] = useState("users");
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      if (!supabaseClient) return;
-      try {
-        const { data, error } = await supabaseClient.from('profiles').select('*');
-        if (!error) setUsers(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUsers();
-  }, []);
+    if (activeTab === "users") {
+      fetchUsers();
+    }
+  }, [activeTab]);
+
+  const fetchUsers = async () => {
+    if (!supabaseClient) return;
+    setLoadingUsers(true);
+    try {
+      const { data, error } = await supabaseClient.from('profiles').select('*').order('created_at', { ascending: false });
+      if (!error) setUsers(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const handleSaveKPI = async (index, newData) => {
+    setSaving(true);
+    const updatedKPIs = [...siteData.kpis];
+    updatedKPIs[index] = newData;
+    
+    // In a real scenario, we'd update Supabase here
+    // For now, we update local state which would be persisted if DB was set up
+    onUpdateData({ ...siteData, kpis: updatedKPIs });
+    
+    if (supabaseClient) {
+      await supabaseClient.from('site_content').upsert({ key: 'kpis', value: updatedKPIs });
+    }
+    setSaving(false);
+  };
+
+  const handleSaveAxe = async (index, newData) => {
+    setSaving(true);
+    const updatedAxes = [...siteData.axes];
+    updatedAxes[index] = { ...updatedAxes[index], ...newData };
+    onUpdateData({ ...siteData, axes: updatedAxes });
+    
+    if (supabaseClient) {
+      await supabaseClient.from('site_content').upsert({ key: 'axes', value: updatedAxes });
+    }
+    setSaving(false);
+  };
 
   return (
-    <div style={{ padding: "40px", maxWidth: "1000px", margin: "0 auto", fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif" }}>
-      <button onClick={onBack} style={{ marginBottom: "20px", cursor: "pointer", background: "none", border: "none", color: "#009597", fontWeight: "700", fontSize: "16px" }}>
-        ← Retour au rapport
-      </button>
-      <h2 style={{ fontSize: "28px", fontWeight: "800", color: "#071621", marginBottom: "24px" }}>Tableau de bord Administrateur</h2>
-      
-      <div className="glass" style={{ padding: "32px", borderRadius: "16px", border: "1px solid #e0e2e8", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
-        <h3 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px", color: "#071621" }}>Utilisateurs inscrits (Base de données)</h3>
-        {loading ? (
-          <p>Chargement des données...</p>
-        ) : users.length > 0 ? (
-          <div style={{ overflowX: "auto" }}>
+    <div style={{ padding: "40px", maxWidth: "1200px", margin: "0 auto", fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
+        <div>
+          <button onClick={onBack} style={{ cursor: "pointer", background: "none", border: "none", color: "#009597", fontWeight: "700", fontSize: "16px", marginBottom: "10px", display: "block" }}>
+            ← Retour au rapport
+          </button>
+          <h2 style={{ fontSize: "32px", fontWeight: "800", color: "#071621" }}>Console d'Administration</h2>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <span style={{ fontSize: "12px", color: SLATE }}>Connecté en tant que</span>
+          <div style={{ fontWeight: "700", color: NAVY }}>{user?.email}</div>
+        </div>
+      </div>
+
+      <div className="admin-tabs">
+        <button className={`admin-tab-btn ${activeTab === "users" ? "active" : ""}`} onClick={() => setActiveTab("users")}>Utilisateurs</button>
+        <button className={`admin-tab-btn ${activeTab === "kpis" ? "active" : ""}`} onClick={() => setActiveTab("kpis")}>KPIs (Chiffres Clés)</button>
+        <button className={`admin-tab-btn ${activeTab === "axes" ? "active" : ""}`} onClick={() => setActiveTab("axes")}>Axes Thématiques</button>
+        <button className={`admin-tab-btn ${activeTab === "settings" ? "active" : ""}`} onClick={() => setActiveTab("settings")}>Configuration</button>
+      </div>
+
+      {activeTab === "users" && (
+        <div className="glass" style={{ padding: "32px", borderRadius: "16px" }}>
+          <h3 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px" }}>Gestion des Utilisateurs</h3>
+          {loadingUsers ? (
+            <p>Chargement...</p>
+          ) : (
             <table className="admin-table">
               <thead>
-                <tr style={{ background: "#f8f9fa" }}>
-                  <th style={{ borderRadius: "8px 0 0 8px" }}>Email</th>
+                <tr>
+                  <th>Email</th>
                   <th>Date d'inscription</th>
-                  <th style={{ borderRadius: "0 8px 8px 0" }}>Rôle</th>
+                  <th>Rôle</th>
                 </tr>
               </thead>
               <tbody>
@@ -209,22 +304,91 @@ const AdminDashboard = ({ user, onBack }) => {
                   <tr key={i}>
                     <td style={{ fontWeight: "600" }}>{u.email}</td>
                     <td>{new Date(u.created_at).toLocaleDateString()}</td>
-                    <td><span style={{ padding: "4px 12px", borderRadius: "12px", background: u.is_admin ? "#00959720" : "#eee", color: u.is_admin ? "#009597" : "#666", fontSize: "11px", fontWeight: "700" }}>{u.is_admin ? "ADMIN" : "USER"}</span></td>
+                    <td><span style={{ padding: "4px 10px", borderRadius: "10px", background: u.is_admin ? "#00959720" : "#eee", color: u.is_admin ? "#009597" : "#666", fontSize: "11px", fontWeight: "700" }}>{u.is_admin ? "ADMIN" : "USER"}</span></td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-        ) : (
-          <div style={{ padding: "40px", textAlign: "center", color: "#666E8A", background: "#fcfcfc", borderRadius: "12px", border: "1px dashed #ddd" }}>
-            <div style={{ fontSize: "32px", marginBottom: "16px" }}>👥</div>
-            <p style={{ fontWeight: "600", color: "#071621" }}>Aucune donnée d'utilisateur trouvée.</p>
-            <p style={{ fontSize: "13px", marginTop: "8px", maxWidth: "400px", margin: "8px auto" }}>
-              Pour afficher les utilisateurs ici, assurez-vous d'avoir créé une table <code>profiles</code> dans Supabase avec les colonnes <code>email</code>, <code>created_at</code>, et <code>is_admin</code>.
-            </p>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "kpis" && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))", gap: "20px" }}>
+          {siteData.kpis.map((k, i) => (
+            <div key={i} className="admin-card">
+              <h4 style={{ marginBottom: "15px", color: TEAL }}>KPI #{i + 1}</h4>
+              <div className="form-group">
+                <label>Valeur</label>
+                <input className="form-control" defaultValue={k.value} onBlur={(e) => handleSaveKPI(i, { ...k, value: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label>Libellé</label>
+                <input className="form-control" defaultValue={k.label} onBlur={(e) => handleSaveKPI(i, { ...k, label: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label>Sous-texte</label>
+                <input className="form-control" defaultValue={k.sub} onBlur={(e) => handleSaveKPI(i, { ...k, sub: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label>Source</label>
+                <input className="form-control" defaultValue={k.source} onBlur={(e) => handleSaveKPI(i, { ...k, source: e.target.value })} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {activeTab === "axes" && (
+        <div>
+          {siteData.axes.map((axe, i) => (
+            <div key={i} className="admin-card" style={{ borderLeft: `6px solid ${axe.color}` }}>
+              <h4 style={{ marginBottom: "15px", color: axe.color }}>{axe.tag} : {axe.title}</h4>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                <div className="form-group">
+                  <label>Titre de l'axe</label>
+                  <input className="form-control" defaultValue={axe.title} onBlur={(e) => handleSaveAxe(i, { title: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Icône (Emoji)</label>
+                  <input className="form-control" defaultValue={axe.icon} onBlur={(e) => handleSaveAxe(i, { icon: e.target.value })} />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Assertion (Phrase clé)</label>
+                <textarea className="form-control" rows="2" defaultValue={axe.assertion} onBlur={(e) => handleSaveAxe(i, { assertion: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label>Implication Sofinco</label>
+                <textarea className="form-control" rows="3" defaultValue={axe.implication} onBlur={(e) => handleSaveAxe(i, { implication: e.target.value })} />
+              </div>
+              <div style={{ fontSize: "11px", color: SLATE }}>Les modifications sont enregistrées automatiquement lors de la perte de focus (onBlur).</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {activeTab === "settings" && (
+        <div className="glass" style={{ padding: "32px", borderRadius: "16px" }}>
+          <h3 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px" }}>Paramètres du Site</h3>
+          <p style={{ fontSize: "14px", color: SLATE, marginBottom: "20px" }}>
+            Pour rendre ces modifications persistantes après un rafraîchissement, assurez-vous d'avoir créé la table <code>site_content</code> dans Supabase.
+          </p>
+          <pre style={{ background: "#f8f9fa", padding: "15px", borderRadius: "8px", fontSize: "12px", overflowX: "auto" }}>
+{`create table public.site_content (
+  key text primary key,
+  value jsonb,
+  updated_at timestamp with time zone default now()
+);`}
+          </pre>
+        </div>
+      )}
+
+      {saving && (
+        <div style={{ position: "fixed", bottom: "20px", right: "20px", background: NAVY, color: "white", padding: "10px 20px", borderRadius: "30px", fontSize: "12px", fontWeight: "700", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
+          Synchronisation en cours...
+        </div>
+      )}
     </div>
   );
 };
@@ -543,8 +707,16 @@ function App() {
   const [section, setSection] = useState("overview");
   const [openGroup, setOpenGroup] = useState(null);
 
+  // Global Site Data State
+  const [siteData, setSiteData] = useState({
+    kpis: kpis,
+    axes: axes,
+    perspectives: perspectives
+  });
+
   useEffect(() => {
     if (supabaseClient) {
+      // 1. Auth session
       supabaseClient.auth.getSession().then(({ data: { session } }) => {
         setSession(session);
       });
@@ -553,9 +725,29 @@ function App() {
         setSession(session);
       });
 
+      // 2. Fetch site content
+      fetchSiteContent();
+
       return () => subscription.unsubscribe();
     }
   }, []);
+
+  const fetchSiteContent = async () => {
+    try {
+      const { data, error } = await supabaseClient.from('site_content').select('*');
+      if (data && !error) {
+        const newData = { ...siteData };
+        data.forEach(item => {
+          if (item.key === 'kpis') newData.kpis = item.value;
+          if (item.key === 'axes') newData.axes = item.value;
+          if (item.key === 'perspectives') newData.perspectives = item.value;
+        });
+        setSiteData(newData);
+      }
+    } catch (err) {
+      console.warn("Using default content (Supabase table 'site_content' not found yet)");
+    }
+  };
 
   const handleLogout = async () => {
     if (supabaseClient) {
@@ -570,7 +762,12 @@ function App() {
   }
 
   if (isAdminView) {
-    return <AdminDashboard user={session?.user} onBack={() => setIsAdminView(false)} />;
+    return <AdminDashboard 
+      user={session?.user} 
+      onBack={() => setIsAdminView(false)} 
+      siteData={siteData}
+      onUpdateData={(newData) => setSiteData(newData)}
+    />;
   }
 
   if (showWelcome) {
@@ -796,7 +993,7 @@ function App() {
               display: "flex", flexWrap: "wrap", marginBottom: 24,
               boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
             }}>
-              {kpis.map((k, i) => (
+              {siteData.kpis.map((k, i) => (
                 <KPICard key={i} {...k} delay={i * 150 + 200} />
               ))}
             </div>
@@ -876,7 +1073,7 @@ function App() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {axes.map((axe) => (
+              {siteData.axes.map((axe) => (
                 <AxeCard
                   key={axe.id}
                   axe={axe}
@@ -942,7 +1139,7 @@ function App() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {perspectives.map((p, i) => (
+              {siteData.perspectives.map((p, i) => (
                 <div key={i} style={{
                   background: "#fff", borderRadius: 10,
                   padding: "16px 20px", borderLeft: `4px solid ${p.color}`,
