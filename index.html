@@ -3,307 +3,1509 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>📡 IA Watch — Console Premium v1.0.1</title>
+<title>📡 IA Watch — Sofinco / MCD — Mai 2026</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Outfit', 'Segoe UI', system-ui, sans-serif; background: #F8FAFC; color: #071621; }
-  .btn-primary { background: #009597; color: white; padding: 12px 24px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; transition: 0.3s; display: inline-flex; align-items: center; gap: 8px; }
-  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,149,151,0.2); }
-  .admin-card { background: white; padding: 25px; border-radius: 20px; border: 1px solid #E2E8F0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
-  .tab-btn { padding: 12px 20px; border-radius: 12px; border: none; background: transparent; color: #64748B; font-weight: 700; cursor: pointer; transition: 0.3s; }
-  .tab-btn.active { background: #EBF7F7; color: #009597; }
-  .kpi-val { font-size: 32px; font-weight: 900; color: #009597; letter-spacing: -1px; }
-  .kpi-label { font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 1px; }
-  .chart-bar { background: linear-gradient(to top, #009597, #2D8E57); border-radius: 6px 6px 0 0; transition: 1s ease-out; }
-  @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-  .fade-in { animation: fadeInUp 0.6s ease forwards; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+  a:hover { opacity: 0.8; }
+  button:hover { opacity: 0.9; }
 </style>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  .glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+  .input-field {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    margin-bottom: 16px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+  }
+  .input-field:focus {
+    outline: none;
+    border-color: #009597;
+    box-shadow: 0 0 0 3px rgba(0, 149, 151, 0.1);
+  }
+  .btn-primary {
+    background: #009597;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .btn-primary:hover {
+    background: #006466;
+    transform: translateY(-1px);
+  }
+  .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  .admin-table th, .admin-table td {
+    text-align: left;
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+  }
+  .admin-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    border-bottom: 1px solid #e0e2e8;
+    padding-bottom: 10px;
+  }
+  .admin-tab-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: #666E8A;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .admin-tab-btn.active {
+    background: #00959715;
+    color: #009597;
+  }
+  .form-group {
+    margin-bottom: 20px;
+  }
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #071621;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .form-control {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #e0e2e8;
+    font-family: inherit;
+    font-size: 14px;
+  }
+  .admin-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e0e2e8;
+    margin-bottom: 15px;
+  }
+</style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
 const { useState, useEffect } = React;
 
-const TEAL = "#009597";
-const NAVY = "#071621";
-const SLATE = "#64748B";
-
-// --- Supabase ---
+// --- Supabase Config ---
+// Ces valeurs seront injectées automatiquement par Vercel lors du build
 const SUPABASE_URL = "__SUPABASE_URL__"; 
 const SUPABASE_ANON_KEY = "__SUPABASE_ANON_KEY__";
-const supabaseClient = (SUPABASE_URL && SUPABASE_URL.startsWith('http')) 
+
+const supabaseClient = (SUPABASE_URL && SUPABASE_URL !== "YOUR_SUPABASE_URL") 
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
 
-// --- Données Intégrales ---
-const FULL_CONTENT = {
-  kpis: [
-    { value: "$2 520 Mds", label: "Dépenses IA mondiales 2026", sub: "+44% YoY", source: "Gartner" },
-    { value: "28%", label: "Taux de succès ROI", sub: "use cases I&O", source: "Gartner" },
-    { value: "17%", label: "Déploiement Agents", sub: "vs 60% prévu", source: "Gartner" },
-    { value: "50%", label: "CEOs poste dépendant IA", sub: "Décideurs principaux", source: "BCG" }
-  ],
-  axes: [
-    { id: 1, color: "#009597", icon: "🤖", tag: "AXE 1", title: "Agents autonomes & gouvernance", assertion: "60% d'intention vs 17% de réalité.", bullets: ["30% du budget IA 2026 à l'agentique", "Valeur mesurée en contexte retenu", "Bascule vers la gouvernance mémoire"], implication: "Poser les fondations identité/registre.", sources: "BCG, Gartner, Bain" },
-    { id: 2, color: "#E07A2F", icon: "📉", tag: "AXE 2", title: "Le paradoxe ROI", assertion: "Seulement 1 projet sur 50 transformateur.", bullets: ["Dépenses doublées en 2026", "Attentes irréalistes persistantes", "Entrée dans le creux de désillusion"], implication: "Mesurer par processus transformé.", sources: "BCG, Gartner, MIT Sloan" },
-    { id: 3, color: "#F47682", icon: "🧠", tag: "AXE 3", title: "Compétences & facteur humain", assertion: "L'IA amplifie les écarts de performance.", bullets: ["50% des emplois transformés", "Intensification de la charge cognitive", "Risque de deskilling silencieux"], implication: "Former au jugement critique humain.", sources: "BCG, HBR, MIT Sloan" },
-    { id: 4, color: "#3A7CC3", icon: "⚡", tag: "AXE 4", title: "Infrastructure & économie", assertion: "L'inférence dépassera l'entraînement.", bullets: ["40% demande data center 2030", "Clusters de 100k+ GPUs nécessaires", "Compétition sur le coût énergétique"], implication: "Architectures data temps réel.", sources: "McKinsey, MIT Tech Review" },
-    { id: 5, color: "#7030A0", icon: "🌍", tag: "AXE 5", title: "Souveraineté & géopolitique", assertion: "Resserrement de l'écart US/Chine.", bullets: ["Usage massif open-source chinois", "IA souveraine européenne (Mistral)", "Trilemme Performance/Contrôle/Coût"], implication: "Arbitrer les dépendances à 3-5 ans.", sources: "MIT Tech Review, McKinsey" },
-    { id: 6, color: "#071621", icon: "🛡️", tag: "AXE 6", title: "IA responsable & risques", assertion: "2000+ plaintes prédites fin 2026.", bullets: ["Explicabilité non-négociable", "Cybersécurité agentique critique", "Maturité RAI encore faible"], implication: "Cadre juridique décisionnel IA.", sources: "Gartner, McKinsey, MIT Sloan" }
-  ],
-  perspectives: [
-    { type: "Hypothèse", text: "Creux de désillusion prolongé au S2 2026.", color: "#E07A2F" },
-    { type: "Signal faible", text: "Rôle 'Agent Operations Officer' émergent.", color: "#F47682" },
-    { type: "Signal faible", text: "Atrophie silencieuse des compétences support.", color: "#F47682" }
-  ],
-  sourceGroups: [
-    { name: "McKinsey", color: "#3A7CC3", pubs: ["State of AI Trust 2026", "Future of AI Workloads"] },
-    { name: "BCG", color: "#2D8E57", pubs: ["AI Radar 2026", "Work Reinvention Mandate"] },
-    { name: "Gartner", color: "#E07A2F", pubs: ["Hype Cycle for Agentic AI", "Strategic Predictions"] }
-  ],
-  settings: { title: "IA WATCH", emoji: "📡", subtitle: "Rapport Stratégique Premium Sofinco / MCD — Mai 2026" }
+const Login = ({ onLogin }) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [mode, setMode] = useState("login");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    
+    if (!supabaseClient) {
+      setError("Veuillez configurer l'URL et la clé Supabase dans index.html");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error } = mode === "login" 
+        ? await supabaseClient.auth.signInWithPassword({ email, password })
+        : await supabaseClient.auth.signUp({ email, password });
+
+      if (error) throw error;
+      if (data.user) onLogin(data.user);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "linear-gradient(135deg, #071621 0%, #009597 100%)",
+      padding: "20px",
+      fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif"
+    }}>
+      <div className="glass" style={{
+        width: "100%",
+        maxWidth: "400px",
+        padding: "40px",
+        borderRadius: "20px",
+        boxShadow: "0 20px 40px rgba(0,0,0,0.3)",
+        textAlign: "center"
+      }}>
+        <div style={{ fontSize: "40px", marginBottom: "10px" }}>📡</div>
+        <h1 style={{ fontSize: "24px", fontWeight: "800", color: "#071621", marginBottom: "8px" }}>IA WATCH</h1>
+        <p style={{ color: "#666E8A", marginBottom: "32px", fontSize: "14px" }}>
+          {mode === "login" ? "Connectez-vous pour accéder au rapport" : "Créez un compte"}
+        </p>
+
+        <form onSubmit={handleSubmit}>
+          <input 
+            type="email" 
+            className="input-field" 
+            placeholder="Email" 
+            required 
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <input 
+            type="password" 
+            className="input-field" 
+            placeholder="Mot de passe" 
+            required 
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          {error && <div style={{ color: "#F47682", fontSize: "12px", marginBottom: "16px", textAlign: "left" }}>{error}</div>}
+          <button type="submit" className="btn-primary" style={{ width: "100%" }} disabled={loading}>
+            {loading ? "Chargement..." : mode === "login" ? "Se connecter" : "S'inscrire"}
+          </button>
+        </form>
+
+        <div style={{ marginTop: "24px", fontSize: "13px", color: "#666E8A" }}>
+          {mode === "login" ? (
+            <>Pas encore de compte ? <a onClick={() => setMode("signup")} style={{ color: "#009597", fontWeight: "600", cursor: "pointer" }}>S'inscrire</a></>
+          ) : (
+            <>Déjà un compte ? <a onClick={() => setMode("login")} style={{ color: "#009597", fontWeight: "600", cursor: "pointer" }}>Se connecter</a></>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
-// --- Composants UI ---
-const AxeCard = ({ axe }) => {
-  const [isOpen, setIsOpen] = useState(false);
+const AdminDashboard = ({ user, onBack, siteData, onUpdateData }) => {
+  const [activeTab, setActiveTab] = useState("stats");
+  const [subTab, setSubTab] = useState("kpis");
+  const [users, setUsers] = useState([]);
+  const [stats, setStats] = useState({ totalUsers: 0, newToday: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetchData();
+  }, [activeTab]);
+
+  const fetchData = async () => {
+    if (!supabaseClient) return;
+    setLoading(true);
+    setError(null);
+    try {
+      // Fetch Users
+      const { data: userData, error: userError } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (userError) throw userError;
+      setUsers(userData || []);
+
+      // Calculate Stats
+      const today = new Date().toISOString().split('T')[0];
+      setStats({
+        totalUsers: userData?.length || 0,
+        newToday: userData?.filter(u => u.created_at.startsWith(today)).length || 0
+      });
+
+    } catch (err) {
+      console.error("Erreur Admin:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveKPI = async (index, newData, bulkData = null) => {
+    setSaving(true);
+    let updatedKPIs;
+    if (bulkData) {
+      updatedKPIs = bulkData;
+    } else {
+      updatedKPIs = [...siteData.kpis];
+      updatedKPIs[index] = newData;
+    }
+    
+    onUpdateData({ ...siteData, kpis: updatedKPIs });
+    if (supabaseClient) {
+      await supabaseClient.from('site_content').upsert({ key: 'kpis', value: updatedKPIs });
+    }
+    setSaving(false);
+  };
+
+  const handleSaveAxe = async (index, newData, bulkData = null) => {
+    setSaving(true);
+    let updatedAxes;
+    if (bulkData) {
+      updatedAxes = bulkData;
+    } else {
+      updatedAxes = [...siteData.axes];
+      updatedAxes[index] = newData;
+    }
+
+    onUpdateData({ ...siteData, axes: updatedAxes });
+    if (supabaseClient) {
+      await supabaseClient.from('site_content').upsert({ key: 'axes', value: updatedAxes });
+    }
+    setSaving(false);
+  };
+
   return (
-    <div onClick={() => setIsOpen(!isOpen)} className="admin-card fade-in" style={{ cursor: "pointer", marginBottom: "15px", border: `1.5px solid ${isOpen ? axe.color : "#E2E8F0"}` }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-        <div style={{ fontSize: 26, background: `${axe.color}15`, padding: 12, borderRadius: 15 }}>{axe.icon}</div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 10, fontWeight: 900, color: axe.color }}>{axe.tag}</div>
-          <div style={{ fontSize: 18, fontWeight: 800 }}>{axe.title}</div>
-          <div style={{ fontSize: 13, color: SLATE, marginTop: 4, fontStyle: "italic" }}>{axe.assertion}</div>
+    <div style={{ padding: "40px", maxWidth: "1200px", margin: "0 auto", fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
+        <div>
+          <button onClick={onBack} style={{ cursor: "pointer", background: "none", border: "none", color: "#009597", fontWeight: "700", fontSize: "16px", marginBottom: "10px", display: "block" }}>
+            ← Retour au rapport
+          </button>
+          <h2 style={{ fontSize: "32px", fontWeight: "800", color: "#071621" }}>Console d'Administration</h2>
         </div>
-        <div style={{ fontSize: 20, color: SLATE }}>{isOpen ? "−" : "+"}</div>
+        <div className="glass" style={{ padding: "10px 20px", borderRadius: "12px", textAlign: "right" }}>
+          <span style={{ fontSize: "11px", color: SLATE, textTransform: "uppercase", fontWeight: "700" }}>Administrateur</span>
+          <div style={{ fontWeight: "700", color: NAVY }}>{user?.email}</div>
+        </div>
       </div>
-      {isOpen && (
-        <div style={{ marginTop: 20, paddingTop: 20, borderTop: "1px solid #F1F5F9" }}>
-          {axe.bullets.map((b, i) => <div key={i} style={{ fontSize: 14, marginBottom: 10 }}>• {b}</div>)}
-          <div style={{ background: `${axe.color}08`, padding: 15, borderRadius: 12, borderLeft: `4px solid ${axe.color}`, marginTop: 15 }}>
-            <div style={{ fontSize: 10, fontWeight: 900, color: axe.color, marginBottom: 5 }}>IMPLICATION</div>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>{axe.implication}</div>
+
+      <div className="admin-tabs">
+        <button className={`admin-tab-btn ${activeTab === "stats" ? "active" : ""}`} onClick={() => setActiveTab("stats")}>📈 Statistiques</button>
+        <button className={`admin-tab-btn ${activeTab === "users" ? "active" : ""}`} onClick={() => setActiveTab("users")}>👥 Utilisateurs</button>
+        <button className={`admin-tab-btn ${activeTab === "content" ? "active" : ""}`} onClick={() => setActiveTab("content")}>📝 Gestion du Contenu</button>
+        <button className={`admin-tab-btn ${activeTab === "config" ? "active" : ""}`} onClick={() => setActiveTab("config")}>⚙️ Configuration</button>
+      </div>
+
+      {error && (
+        <div style={{ padding: "15px", background: "#fee2e2", color: "#b91c1c", borderRadius: "8px", marginBottom: "20px", fontSize: "14px", fontWeight: "600" }}>
+          ⚠️ Erreur Supabase : {error}
+          <div style={{ fontSize: "12px", marginTop: "5px", fontWeight: "400" }}>Vérifiez vos politiques RLS et si votre utilisateur est bien admin.</div>
+        </div>
+      )}
+
+      {activeTab === "stats" && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "20px" }}>
+          <div className="admin-card" style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "40px", marginBottom: "10px" }}>👥</div>
+            <div style={{ fontSize: "14px", color: SLATE, fontWeight: "600" }}>Total Utilisateurs</div>
+            <div style={{ fontSize: "32px", fontWeight: "800", color: NAVY }}>{stats.totalUsers}</div>
           </div>
+          <div className="admin-card" style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "40px", marginBottom: "10px" }}>✨</div>
+            <div style={{ fontSize: "14px", color: SLATE, fontWeight: "600" }}>Inscriptions aujourd'hui</div>
+            <div style={{ fontSize: "32px", fontWeight: "800", color: "#009597" }}>{stats.newToday}</div>
+          </div>
+          <div className="admin-card" style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "40px", marginBottom: "10px" }}>🛰️</div>
+            <div style={{ fontSize: "14px", color: SLATE, fontWeight: "600" }}>Statut Serveur</div>
+            <div style={{ fontSize: "18px", fontWeight: "800", color: "#10b981", marginTop: "10px" }}>Opérationnel</div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "users" && (
+        <div className="glass" style={{ padding: "32px", borderRadius: "16px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+            <h3 style={{ fontSize: "20px", fontWeight: "700" }}>Utilisateurs inscrits</h3>
+            <button onClick={fetchData} style={{ background: "none", border: "none", color: TEAL, fontWeight: "600", cursor: "pointer" }}>Actualiser ↻</button>
+          </div>
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Date d'inscription</th>
+                <th>Rôle</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((u, i) => (
+                <tr key={i}>
+                  <td style={{ fontWeight: "600" }}>{u.email}</td>
+                  <td>{new Date(u.created_at).toLocaleDateString()}</td>
+                  <td>
+                    <span style={{ padding: "4px 10px", borderRadius: "10px", background: u.is_admin ? "#00959720" : "#eee", color: u.is_admin ? "#009597" : "#666", fontSize: "11px", fontWeight: "700" }}>
+                      {u.is_admin ? "ADMIN" : "USER"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {users.length === 0 && !loading && (
+                <tr><td colSpan="3" style={{ textAlign: "center", padding: "40px", color: SLATE }}>Aucun utilisateur trouvé.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {activeTab === "stats" && (
+        <div style={{ animation: "fadeIn 0.3s ease" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "25px", marginBottom: "30px" }}>
+            <div className="admin-card" style={{ borderTop: `4px solid ${TEAL}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ fontSize: "14px", color: SLATE, fontWeight: "600" }}>Total Utilisateurs</div>
+                <div style={{ fontSize: "24px" }}>👥</div>
+              </div>
+              <div style={{ fontSize: "36px", fontWeight: "800", color: NAVY, margin: "10px 0" }}>{stats.totalUsers}</div>
+              <div style={{ fontSize: "12px", color: GREEN, fontWeight: "700" }}>
+                {stats.totalUsers > 0 ? "↑ 100%" : "0%"} <span style={{ fontWeight: "400", color: SLATE }}>croissance globale</span>
+              </div>
+            </div>
+            <div className="admin-card" style={{ borderTop: `4px solid ${ORANGE}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ fontSize: "14px", color: SLATE, fontWeight: "600" }}>Inscriptions (24h)</div>
+                <div style={{ fontSize: "24px" }}>✨</div>
+              </div>
+              <div style={{ fontSize: "36px", fontWeight: "800", color: NAVY, margin: "10px 0" }}>{stats.newToday}</div>
+              <div style={{ fontSize: "12px", color: stats.newToday > 0 ? GREEN : SLATE, fontWeight: "700" }}>
+                {stats.newToday > 0 ? "↑ Active" : "Stable"} <span style={{ fontWeight: "400", color: SLATE }}>activité récente</span>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "25px" }}>
+            {/* Graphique d'évolution (Linéaire) */}
+            <div className="admin-card">
+              <h4 style={{ marginBottom: "20px", fontSize: "16px", fontWeight: "700" }}>Évolution des inscriptions (7 derniers jours)</h4>
+              <div style={{ height: "200px", width: "100%", position: "relative", display: "flex", alignItems: "flex-end", gap: "10px", paddingBottom: "20px" }}>
+                {[...Array(7)].map((_, i) => {
+                  const day = new Date();
+                  day.setDate(day.getDate() - (6 - i));
+                  const dateStr = day.toISOString().split('T')[0];
+                  const count = users.filter(u => u.created_at.startsWith(dateStr)).length;
+                  const height = stats.totalUsers > 0 ? (count / stats.totalUsers) * 150 + 10 : 10;
+                  return (
+                    <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
+                      <div style={{ 
+                        width: "100%", 
+                        height: `${height}px`, 
+                        background: `linear-gradient(to top, ${TEAL}, ${TEAL}88)`, 
+                        borderRadius: "6px 6px 0 0",
+                        transition: "height 0.5s ease"
+                      }}></div>
+                      <div style={{ fontSize: "10px", color: SLATE, fontWeight: "600" }}>{day.toLocaleDateString('fr-FR', { weekday: 'short' })}</div>
+                    </div>
+                  );
+                })}
+                <div style={{ position: "absolute", left: 0, right: 0, bottom: "19px", height: "1px", background: "#eee" }}></div>
+              </div>
+            </div>
+
+            {/* Répartition des rôles (Donut) */}
+            <div className="admin-card" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+              <h4 style={{ marginBottom: "20px", fontSize: "16px", fontWeight: "700", width: "100%" }}>Rôles</h4>
+              <div style={{ position: "relative", width: "120px", height: "120px" }}>
+                <svg viewBox="0 0 36 36" style={{ transform: "rotate(-90deg)" }}>
+                  <circle cx="18" cy="18" r="16" fill="none" stroke="#eee" strokeWidth="3"></circle>
+                  <circle 
+                    cx="18" cy="18" r="16" fill="none" stroke={TEAL} strokeWidth="3" 
+                    strokeDasharray={`${(users.filter(u => u.is_admin).length / (users.length || 1)) * 100} 100`}
+                  ></circle>
+                </svg>
+                <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", textAlign: "center" }}>
+                  <div style={{ fontSize: "18px", fontWeight: "800", color: NAVY }}>{users.filter(u => u.is_admin).length}</div>
+                  <div style={{ fontSize: "9px", color: SLATE, textTransform: "uppercase" }}>Admins</div>
+                </div>
+              </div>
+              <div style={{ marginTop: "20px", width: "100%" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "5px" }}>
+                  <span style={{ color: SLATE }}>Utilisateurs standards</span>
+                  <span style={{ fontWeight: "700" }}>{users.filter(u => !u.is_admin).length}</span>
+                </div>
+                <div style={{ height: "4px", background: "#eee", borderRadius: "2px", overflow: "hidden" }}>
+                  <div style={{ width: `${(users.filter(u => !u.is_admin).length / (users.length || 1)) * 100}%`, height: "100%", background: SLATE }}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "content" && (
+        <div style={{ animation: "fadeIn 0.3s ease" }}>
+          <div style={{ background: "#f8f9fa", padding: "15px", borderRadius: "10px", marginBottom: "30px", display: "flex", gap: "10px" }}>
+            {["kpis", "axes", "perspectives", "sources"].map(t => (
+              <button 
+                key={t}
+                onClick={() => setSubTab(t)}
+                style={{
+                  padding: "8px 16px", borderRadius: "6px", border: "none",
+                  background: subTab === t ? "white" : "transparent",
+                  boxShadow: subTab === t ? "0 2px 4px rgba(0,0,0,0.05)" : "none",
+                  color: subTab === t ? TEAL : SLATE,
+                  fontWeight: "700", cursor: "pointer", fontSize: "13px", textTransform: "uppercase"
+                }}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+
+          {subTab === "kpis" && (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                <h3 style={{ fontSize: "18px", fontWeight: "700" }}>Gestion des Chiffres Clés (KPIs)</h3>
+                <button onClick={() => {
+                  const newKPIs = [...siteData.kpis, { value: "0", label: "Nouveau", sub: "", source: "" }];
+                  handleSaveKPI(null, null, newKPIs);
+                }} className="btn-primary">+ Ajouter</button>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "20px" }}>
+                {siteData.kpis.map((k, i) => (
+                  <div key={i} className="admin-card">
+                    <div className="form-group"><label>Valeur</label><input className="form-control" id={`kpi-v-${i}`} defaultValue={k.value} /></div>
+                    <div className="form-group"><label>Label</label><input className="form-control" id={`kpi-l-${i}`} defaultValue={k.label} /></div>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <button onClick={() => handleSaveKPI(i, { ...k, value: document.getElementById(`kpi-v-${i}`).value, label: document.getElementById(`kpi-l-${i}`).value })} style={{ flex: 1, background: TEAL, color: "white", border: "none", padding: "8px", borderRadius: "6px", cursor: "pointer" }}>Sauver</button>
+                      <button onClick={() => { if(confirm("Supprimer?")) handleSaveKPI(null, null, siteData.kpis.filter((_, idx) => idx !== i)) }} style={{ background: "#fee2e2", color: "#ef4444", border: "none", padding: "8px", borderRadius: "6px", cursor: "pointer" }}>🗑️</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {subTab === "axes" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              {siteData.axes.map((axe, i) => (
+                <div key={i} className="admin-card" style={{ borderLeft: `6px solid ${axe.color}` }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "15px" }}>
+                    <div className="form-group"><label>Icône</label><input className="form-control" id={`axe-i-${i}`} defaultValue={axe.icon} /></div>
+                    <div className="form-group"><label>Titre</label><input className="form-control" id={`axe-t-${i}`} defaultValue={axe.title} /></div>
+                    <div className="form-group"><label>Tag</label><input className="form-control" id={`axe-g-${i}`} defaultValue={axe.tag} /></div>
+                  </div>
+                  <div className="form-group"><label>Assertion</label><textarea className="form-control" id={`axe-a-${i}`} defaultValue={axe.assertion} /></div>
+                  <button onClick={() => handleSaveAxe(i, { ...axe, icon: document.getElementById(`axe-i-${i}`).value, title: document.getElementById(`axe-t-${i}`).value, tag: document.getElementById(`axe-g-${i}`).value, assertion: document.getElementById(`axe-a-${i}`).value })} style={{ background: TEAL, color: "white", border: "none", padding: "10px", borderRadius: "6px", cursor: "pointer", fontWeight: "700" }}>Enregistrer les modifications</button>
+                </div>
+              ))}
+              <button onClick={() => handleSaveAxe(null, null, [...siteData.axes, { id: Date.now(), tag: "NOUVEAU", title: "Titre", icon: "✨", color: TEAL, assertion: "", bullets: [], implication: "", sources: "" }])} className="btn-primary">Ajouter un Axe Thématique</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "config" && (
+        <div className="glass" style={{ padding: "32px", borderRadius: "16px" }}>
+          <h3 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "25px" }}>Configuration Globale du Site</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "30px" }}>
+            <div className="form-group">
+              <label>Titre du Site</label>
+              <input className="form-control" id="conf-title" defaultValue={siteData.settings?.title || "IA WATCH"} />
+            </div>
+            <div className="form-group">
+              <label>Émoji Logo</label>
+              <input className="form-control" id="conf-emoji" defaultValue={siteData.settings?.emoji || "📡"} />
+            </div>
+          </div>
+          <div className="form-group">
+            <label>Sous-titre (Landing Page)</label>
+            <textarea className="form-control" id="conf-sub" defaultValue={siteData.settings?.subtitle || "Impact de l'IA sur l'économie..."} />
+          </div>
+          <button 
+            onClick={async () => {
+              const settings = {
+                title: document.getElementById("conf-title").value,
+                emoji: document.getElementById("conf-emoji").value,
+                subtitle: document.getElementById("conf-sub").value,
+              };
+              setSaving(true);
+              onUpdateData({ ...siteData, settings });
+              if (supabaseClient) {
+                await supabaseClient.from('site_content').upsert({ key: 'settings', value: settings });
+              }
+              setSaving(false);
+            }}
+            className="btn-primary" style={{ width: "100%", marginTop: "10px" }}
+          >
+            Sauvegarder la Configuration Globale
+          </button>
+        </div>
+      )}
+
+      {activeTab === "config" && (
+        <div className="glass" style={{ padding: "32px", borderRadius: "16px" }}>
+          <h3 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px" }}>Paramètres de la base de données</h3>
+          <p style={{ fontSize: "14px", color: SLATE, marginBottom: "20px" }}>Table utilisée pour le contenu : <code>site_content</code></p>
+          <pre style={{ background: "#f8f9fa", padding: "15px", borderRadius: "8px", fontSize: "12px" }}>
+            {`SELECT * FROM public.profiles; -- Vérifier les utilisateurs`}
+          </pre>
+        </div>
+      )}
+
+      {saving && (
+        <div style={{ position: "fixed", bottom: "20px", right: "20px", background: NAVY, color: "white", padding: "10px 20px", borderRadius: "30px", fontSize: "12px", fontWeight: "700", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
+          Synchronisation...
         </div>
       )}
     </div>
   );
 };
 
-// --- Dashboard Admin (Rich) ---
-const AdminDashboard = ({ user, onBack, siteData, onUpdateData }) => {
-  const [activeTab, setActiveTab] = useState("stats");
-  const [saving, setSaving] = useState(false);
 
+const TEAL = "#009597";
+const DARK_TEAL = "#006466";
+const SLATE = "#666E8A";
+const NAVY = "#071621";
+const TEAL_PASTEL = "#EBF7F7";
+const GREEN = "#2D8E57";
+const ORANGE = "#E07A2F";
+const CORAL = "#F47682";
+const BLUE = "#3A7CC3";
+const VIOLET = "#7030A0";
+
+const kpis = [
+  { value: "$2 520 Mds", label: "Dépenses IA mondiales 2026", sub: "+44% YoY", source: "Gartner" },
+  { value: "28%", label: "Taux de succès ROI", sub: "use cases I&O", source: "Gartner" },
+  { value: "17%", label: "Organisations ayant déployé des agents", sub: "vs 60%+ prévu sous 2 ans", source: "Gartner" },
+  { value: "50%", label: "CEOs dont le poste dépend du succès IA", sub: "72% sont décideurs principaux", source: "BCG" },
+];
+
+const axes = [
+  {
+    id: 1, color: TEAL, icon: "🤖",
+    tag: "AXE 1",
+    title: "Agents autonomes & gouvernance",
+    assertion: "60% d'intention de déploiement mais 17% de réalité — la gouvernance devient le facteur limitant",
+    bullets: [
+      "BCG AI Radar 2026 : 30% du budget IA 2026 alloué à l'agentique, 90% des CEOs croient que les agents livreront un ROI mesurable cette année",
+      "Bain distingue agents épisodiques vs persistants : la valeur se mesure en contexte retenu et rework éliminé, pas en temps humain économisé",
+      "Google Cloud Next 2026 : le sujet bascule de la création d'agents à leur gouvernance — identité non-humaine, registre, gateway, observabilité",
+      "Nvidia lance NemoClaw : sandboxing runtime + guardrails réseau pour agents en production"
+    ],
+    implication: "Poser les fondations avant la prolifération : registre d'agents, gestion d'identité machine, politique de mémoire et de rétention",
+    sources: "BCG, AI Radar 2026 (jan. 2026) · Gartner, Hype Cycle Agentic AI (mai 2026) · Bain, AI's Next Operating Model (avr. 2026) · Bain, Google Cloud Next 2026 (avr. 2026)"
+  },
+  {
+    id: 2, color: ORANGE, icon: "📉",
+    tag: "AXE 2",
+    title: "Le paradoxe ROI",
+    assertion: "Investissements records mais seulement 1 projet sur 50 délivre une valeur transformationnelle",
+    bullets: [
+      "BCG AI Radar : les entreprises prévoient de doubler leurs dépenses IA en 2026 (~1,7% du CA). 94% continueront même sans retours immédiats. 50% des CEOs estiment que leur poste dépend du succès de l'IA",
+      "57% des échecs I&O liés à des attentes irréalistes — surestimation de ce que l'IA peut livrer immédiatement (Gartner, avr. 2026)",
+      "Gartner place l'IA dans le « Trough of Disillusionment » : elle sera vendue par les éditeurs existants, pas achetée comme projet moonshot",
+      "MIT Sloan : le passage insuffisant de l'usage individuel (Copilot) à l'usage entreprise (transformation de processus) est le vrai problème"
+    ],
+    implication: "Mesurer par processus transformé, pas par POC livré. Passer de « deploying AI » à « rebuilding around it » (Bain)",
+    sources: "BCG, AI Radar 2026 (jan. 2026) · Gartner, AI Spending (jan. 2026) · Gartner, AI Projects I&O (avr. 2026) · MIT Sloan, Five Trends (jan. 2026)"
+  },
+  {
+    id: 3, color: CORAL, icon: "🧠",
+    tag: "AXE 3",
+    title: "Compétences & facteur humain",
+    assertion: "L'IA amplifie les écarts (+15% pour les forts, −10% pour les faibles) et intensifie le travail",
+    bullets: [
+      "BCG (avr. 2026) : 50-55% des emplois US seront significativement transformés par l'IA dans les 2-3 ans — seuls 10-15% seront supprimés. La reinvention du travail est un « CEO mandate »",
+      "HBR (fév. 2026) : l'IA ajoute de la charge cognitive — vérification, incertitude, pression à produire. Certains en finance passent plus de temps sur le transactionnel, pas moins",
+      "MIT Sloan (avr. 2026) : essai randomisé au Kenya — GPT-4 booste les performants de 15% mais dégrade les faibles de 10%",
+      "Gartner prédit que 50% des organisations imposeront des évaluations « AI-free » d'ici fin 2026"
+    ],
+    implication: "Construire des dispositifs de jugement critique : validation humaine structurée, évaluation sans IA, formation aux limites des modèles",
+    sources: "BCG, AI Reshapes Jobs (avr. 2026) · HBR, AI Doesn't Reduce Work (fév. 2026) · MIT Sloan, How AI Helps the Best (avr. 2026) · Wharton, Blueprint (avr. 2026)"
+  },
+  {
+    id: 4, color: BLUE, icon: "⚡",
+    tag: "AXE 4",
+    title: "Infrastructure & économie",
+    assertion: "L'inférence dépassera l'entraînement d'ici 2030 — la compétition se déplace vers le coût et la fiabilité",
+    bullets: [
+      "McKinsey : l'inférence représentera 40%+ de la demande data center d'ici 2030, changeant les critères de localisation et d'énergie",
+      "MIT Tech Review : data centers hyperscale parmi les 10 Breakthrough 2026 — clusters de 100k+ GPUs, >1 GW, refroidissement liquide",
+      "Stanford AI Index 2026 : les modèles frontière sont séparés par des marges infimes — compétition sur coût, fiabilité, utilité",
+      "MIT Sloan trace un parallèle avec la bulle dot-com : valorisations extrêmes, infrastructure spéculative"
+    ],
+    implication: "Repenser les architectures data pour servir des agents en temps quasi réel — contraintes de latence incompatibles avec le batch classique",
+    sources: "McKinsey, Future of AI Workloads (fév. 2026) · MIT Tech Review, Hyperscale Data Centers (jan. 2026) · Gartner, AI Spending (jan. 2026)"
+  },
+  {
+    id: 5, color: VIOLET, icon: "🌍",
+    tag: "AXE 5",
+    title: "Souveraineté & géopolitique",
+    assertion: "L'écart entre modèles chinois et frontière occidentale se réduit de mois en semaines",
+    bullets: [
+      "MIT Tech Review : des apps Silicon Valley tournent sur des modèles chinois open-source en 2026 — la confiance globale est acquise",
+      "Accenture × Mistral AI : collaboration stratégique multi-années pour l'IA souveraine européenne",
+      "McKinsey : la souveraineté IA exige un effort d'écosystème — énergie, compute, données, modèles, plateformes",
+      "Guerre régulatoire US : Maison Blanche vs États, lobbying massif des entreprises IA"
+    ],
+    implication: "Trilemme à arbitrer : performance (US) vs contrôle (Europe/Mistral) vs coût (Chine open-source) — engage des dépendances à 3-5 ans",
+    sources: "MIT Tech Review, What's Next (jan. 2026) · Accenture/Mistral (fév. 2026) · McKinsey, Sovereign AI (mars 2026)"
+  },
+  {
+    id: 6, color: NAVY, icon: "🛡️",
+    tag: "AXE 6",
+    title: "IA responsable & risques",
+    assertion: "2 000+ plaintes « death by AI » prédites d'ici fin 2026 — la cybersécurité agentique entre dans le périmètre RAI",
+    bullets: [
+      "Gartner : les plaintes liées à des décisions IA fatales dépasseront 2 000 — explicabilité et design éthique deviennent non négociables",
+      "MIT Sloan/BCG : 80% des experts estiment que l'IA responsable doit intégrer l'impact sur les travailleurs",
+      "McKinsey : score de maturité RAI moyen à 2.3/5 en 2026, seulement 1/3 des organisations à 3+",
+      "Un agent mal configuré = menace interne à la vitesse machine. 50% des échecs de déploiement liés à la gouvernance runtime (Gartner)"
+    ],
+    implication: "Trois chantiers : cadre juridique pour décisions agentiques, extension RAI aux impacts workforce, sécurité agents (identité, monitoring, circuit-breakers)",
+    sources: "Gartner, Strategic Predictions (mai 2026) · MIT Sloan/BCG, Beyond the Model (avr. 2026) · McKinsey, AI Trust (mars 2026)"
+  },
+];
+
+const perspectives = [
+  { type: "Hypothèse", text: "Le creux de désillusion se prolonge au S2 2026 — correction des valorisations pure players, rationalisation des portefeuilles de use cases. Les boards exigeront des métriques EBIT impact.", color: ORANGE },
+  { type: "Hypothèse", text: "L'IA agentique ne sera pas mainstream avant 2028. Premiers déploiements à l'échelle sur workflows structurés à faible enjeu décisionnel. Les processus critiques (octroi de crédit, conformité) restent en augmentation humaine.", color: ORANGE },
+  { type: "Signal faible", text: "Émergence probable d'un rôle « Agent Operations Officer » d'ici 18 mois. Les data offices qui ne prennent pas ce sujet risquent de se le voir retirer par les DSI.", color: CORAL },
+  { type: "Signal faible", text: "Convergence intensification du travail + atrophie des compétences → « deskilling silencieux » dans les fonctions support — risque opérationnel latent invisible aux indicateurs classiques.", color: CORAL },
+];
+
+const FOOTER_TEXT = "Rapport produit le 7 mai 2026 — Sources publiques — Publications 2026 uniquement — Chaque source a été scannée et analysée automatiquement par IA (modèle Claude Opus 4.6)";
+
+const sourceGroups = [
+  { name: "McKinsey", color: BLUE, pubs: [
+    { title: "State of AI Trust in 2026: Shifting to the Agentic Era", date: "Mars 2026", url: "https://www.mckinsey.com/capabilities/tech-and-ai/our-insights/tech-forward/state-of-ai-trust-in-2026-shifting-to-the-agentic-era" },
+    { title: "The State of AI in 2025: Agents, Innovation, and Transformation", date: "Fév. 2026", url: "https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai" },
+    { title: "Sovereign AI — Ecosystem Effort", date: "Mars 2026", url: "https://www.mckinsey.com/capabilities/quantumblack/our-insights" },
+    { title: "AI Adoption Challenges Are Experiential, Not Technical", date: "Mars 2026", url: "https://www.mckinsey.com/capabilities/quantumblack/our-insights" },
+    { title: "Skills Reset for the AI Age ($2.9T value)", date: "Mars 2026", url: "https://www.mckinsey.com/featured-insights/week-in-charts/skills-reset-for-the-ai-age" },
+    { title: "Future of AI Workloads (inference > training)", date: "Fév. 2026", url: "https://www.mckinsey.com/featured-insights/week-in-charts/the-future-of-ai-workloads" },
+  ]},
+  { name: "BCG", color: "#00A551", pubs: [
+    { title: "BCG AI Radar 2026 — As AI Investments Surge, CEOs Take the Lead", date: "Jan. 2026", url: "https://www.bcg.com/publications/2026/as-ai-investments-surge-ceos-take-the-lead" },
+    { title: "How AI Agents Will Transform Health Care in 2026", date: "Mars 2026", url: "https://www.bcg.com/publications/2026/how-ai-agents-will-transform-health-care" },
+    { title: "The AI-First Power & Utility Company", date: "Mars 2026", url: "https://www.bcg.com/publications/2026/the-ai-first-utility-defining-the-industrys-future" },
+    { title: "AI Has Made Work Reinvention a CEO Mandate", date: "Avr. 2026", url: "https://www.bcg.com/publications/2026/ai-has-made-work-reinvention-a-ceo-mandate" },
+    { title: "AI-First Companies Win the Future: Payments (A2A commerce)", date: "Avr. 2026", url: "https://www.bcg.com/assets/2026/executive-perspectives-ai-first-companies-payments.pdf" },
+    { title: "AI Set to Reshape 50-55% of US Jobs", date: "Avr. 2026", url: "https://www.bcg.com/publications/2026" },
+    { title: "Global Asset Management 2026 — Rebuilding for an AI-First World", date: "Mai 2026", url: "https://www.bcg.com/publications/2026/rebuilding-asset-management-for-an-ai-first-world" },
+  ]},
+  { name: "Bain", color: GREEN, pubs: [
+    { title: "What to Expect from AI in 2026", date: "Jan. 2026", url: "https://www.bain.com/insights/what-to-expect-from-ai-in-2026/" },
+    { title: "The AI Enterprise: Code Red", date: "Fév. 2026", url: "https://www.bain.com/insights/ai-enterprise-code-red/" },
+    { title: "AI's Evolution: What Good Looks Like Now", date: "Fév. 2026", url: "https://www.bain.com/insights/ais-evolution-what-good-looks-like-now/" },
+    { title: "Nvidia GTC 2026: AI Becomes the Operating Layer", date: "Mars 2026", url: "https://www.bain.com/insights/nvidia-gtc-2026-ai-becomes-the-operating-layer/" },
+    { title: "Agentic AI Commerce: The Next Retail Revolution", date: "Mars 2026", url: "https://www.bain.com/insights/agentic-ai-commerce-the-next-retail-revolution-is-here/" },
+    { title: "Google Cloud Next 2026: Agentic Enterprise Control Plane", date: "Avr. 2026", url: "https://www.bain.com/insights/google_cloud_next_2026_the_agentic_enterprise_control_plane_comes_into_view/" },
+    { title: "AI's Next Operating Model (Long-Running Agents)", date: "Avr. 2026", url: "https://www.bain.com/insights/ais-next-operating-model/" },
+  ]},
+  { name: "Accenture", color: VIOLET, pubs: [
+    { title: "Acquisition de Faculty (AI Safety & Decision Intelligence)", date: "Jan. 2026", url: "https://newsroom.accenture.com/news/2026/accenture-to-acquire-faculty-to-scale-ai-capabilities" },
+    { title: "Partnership Mistral AI — Souveraineté européenne", date: "Fév. 2026", url: "https://newsroom.accenture.com/news/2026/accenture-and-mistral-ai-accelerate-enterprise-reinvention-with-scalable-ai-that-delivers-strategic-autonomy-for-customers" },
+    { title: "Accenture × Databricks — AI Applications at Scale", date: "Mars 2026", url: "https://newsroom.accenture.com/news/2026/accenture-and-databricks-accelerate-enterprise-adoption-of-ai-applications-and-agents-at-scale" },
+    { title: "Invest Replit — Vibe Coding", date: "Avr. 2026", url: "https://newsroom.accenture.com/news/2026/accenture-invests-in-replit-to-advance-ai-driven-software-development-for-enterprises" },
+    { title: "Agentic Factory avec Microsoft (manufacturing)", date: "Avr. 2026", url: "https://newsroom.accenture.com/news/2026/accenture-and-avanade-collaborate-with-microsoft-to-develop-agentic-factory-to-help-reduce-manufacturing-downtime" },
+    { title: "Google Cloud — Gemini Enterprise Acceleration Program", date: "Avr. 2026", url: "https://newsroom.accenture.com/news/2026/accenture-and-google-cloud-expand-partnership-to-scale-agentic-transformation-for-global-enterprises-with-gemini-enterprise" },
+  ]},
+  { name: "Gartner", color: ORANGE, pubs: [
+    { title: "Worldwide AI Spending $2.52T in 2026 (+44% YoY)", date: "Jan. 2026", url: "https://www.gartner.com/en/newsroom/press-releases/2026-1-15-gartner-says-worldwide-ai-spending-will-total-2-point-5-trillion-dollars-in-2026" },
+    { title: "Top Predictions for Data & Analytics 2026", date: "Mars 2026", url: "https://www.gartner.com/en/newsroom/press-releases/2026-03-11-gartner-announces-top-predictions-for-data-and-analytics-in-2026" },
+    { title: "AI Projects in I&O: 28% Success Rate", date: "Avr. 2026", url: "https://www.gartner.com/en/newsroom/press-releases/2026-04-07-gartner-says-artificial-intelligence-projects-in-infrastructure-and-operations-stall-ahead-of-meaningful-roi-returns" },
+    { title: "80% of CEOs Say AI Will Force Operational Overhauls", date: "Avr. 2026", url: "https://www.gartner.com/en/newsroom/press-releases/2026-04-23-gartner-survey-reveals-80-percent-of-ceos-say-artificial-intelligence-will-force-operational-capability-overhauls" },
+    { title: "Strategic Predictions for 2026 (critical thinking, death by AI)", date: "Mai 2026", url: "https://www.gartner.com/en/articles/strategic-predictions-for-2026" },
+    { title: "2026 Hype Cycle for Agentic AI", date: "Mai 2026", url: "https://www.gartner.com/en/articles/hype-cycle-for-agentic-ai" },
+  ]},
+  { name: "MIT Sloan Management Review", color: TEAL, pubs: [
+    { title: "Five Trends in AI and Data Science for 2026", date: "Jan. 2026", url: "https://sloanreview.mit.edu/article/five-trends-in-ai-and-data-science-for-2026/" },
+    { title: "LLMs Increase Persuasive Behaviors (« persuasion bombing »)", date: "Fév. 2026", url: "https://sloanreview.mit.edu/topic/ai-machine-learning/" },
+    { title: "AI Won't Fix This (digital dexterity)", date: "Mars 2026", url: "https://sloanreview.mit.edu/article/ai-wont-fix-this/" },
+    { title: "How AI Helps the Best and Hurts the Rest", date: "Avr. 2026", url: "https://sloanreview.mit.edu/article/how-ai-helps-the-best-and-hurts-the-rest/" },
+    { title: "Beyond the Model — Responsible AI Must Address Workforce", date: "Avr. 2026", url: "https://sloanreview.mit.edu/article/beyond-the-model-why-responsible-ai-must-address-workforce-impact/" },
+  ]},
+  { name: "MIT Technology Review", color: DARK_TEAL, pubs: [
+    { title: "What's Next for AI in 2026 (China, regulation)", date: "Jan. 2026", url: "https://www.technologyreview.com/2026/01/05/1130662/whats-next-for-ai-in-2026/" },
+    { title: "Hyperscale Data Centers (10 Breakthrough Technologies)", date: "Jan. 2026", url: "https://www.technologyreview.com/2026/01/12/1129982/hyperscale-ai-data-centers-energy-usage-2026-breakthrough-technology/" },
+    { title: "Stanford AI Index 2026 — State of AI in Charts", date: "Avr. 2026", url: "https://www.technologyreview.com/2026/04/13/1135675/want-to-understand-the-current-state-of-ai-check-out-these-charts/" },
+    { title: "10 Things That Matter in AI Right Now", date: "Avr. 2026", url: "https://www.technologyreview.com/2026/04/21/1135643/10-ai-artificial-intelligence-trends-technologies-research-2026/" },
+  ]},
+  { name: "Harvard Business Review", color: CORAL, pubs: [
+    { title: "Survey: How Executives Are Thinking About AI in 2026", date: "Jan. 2026", url: "https://hbr.org/2026/01/hb-how-executives-are-thinking-about-ai-heading-into-2026" },
+    { title: "9 Trends Shaping Work in 2026 and Beyond", date: "Fév. 2026", url: "https://hbr.org/2026/02/9-trends-shaping-work-in-2026-and-beyond" },
+    { title: "AI Doesn't Reduce Work — It Intensifies It", date: "Fév. 2026", url: "https://hbr.org/2026/02/ai-doesnt-reduce-work-it-intensifies-it" },
+    { title: "How Gen AI Can Turn Reams of Text into Actionable Insights", date: "Mars 2026", url: "https://hbr.org/2026/03/how-gen-ai-can-turn-reams-of-text-into-actionable-insights" },
+    { title: "The Future Is Shrouded in an AI Fog", date: "Avr. 2026", url: "https://hbr.org/2026/04/the-future-is-shrouded-in-an-ai-fog" },
+    { title: "How AI Is Changing Finance Leaders (Deloitte)", date: "Mai 2026", url: "https://hbr.org/sponsored/2026/05/how-ai-is-changing-the-needs-and-values-of-finance-leaders-and-their-teams" },
+  ]},
+  { name: "Wharton Knowledge", color: SLATE, pubs: [
+    { title: "Six AI Trends Shaping Business in 2026 (Puntoni)", date: "Mars 2026", url: "https://knowledge.wharton.upenn.edu/podcast/this-week-in-business/six-ai-trends-shaping-business-education-and-markets-in-2026/" },
+    { title: "From Hype to Impact: AI Reshapes Enterprise Software", date: "Mars 2026", url: "https://knowledge.wharton.upenn.edu/podcast/this-week-in-business/from-hype-to-impact-ai-reshapes-enterprise-software/" },
+    { title: "The Wharton Blueprint for AI Agent Adoption", date: "Avr. 2026", url: "https://knowledge.wharton.upenn.edu/special-report/wharton-blueprint-ai-agent-adoption/" },
+  ]},
+];
+
+function KPICard({ value, label, sub, source, delay }) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => { setTimeout(() => setVisible(true), delay); }, [delay]);
   return (
-    <div style={{ minHeight: "100vh", background: "#F8FAFC" }}>
-      <nav style={{ background: "white", padding: "20px 40px", borderBottom: "1px solid #E2E8F0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <button onClick={onBack} style={{ background: "#EBF7F7", color: TEAL, border: "none", padding: "8px 16px", borderRadius: 10, fontWeight: 700, cursor: "pointer" }}>← Retour</button>
-          <h1 style={{ fontSize: 20, fontWeight: 900 }}>Console d'Administration</h1>
-        </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 10, fontWeight: 900, color: SLATE }}>ADMINISTRATEUR</div>
-          <div style={{ fontWeight: 700, fontSize: 14 }}>{user.email}</div>
-        </div>
-      </nav>
+    <div style={{
+      flex: "1 1 0", minWidth: 140, textAlign: "center", padding: "20px 12px",
+      opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(20px)",
+      transition: "all 0.6s cubic-bezier(0.23, 1, 0.32, 1)",
+    }}>
+      <div style={{ fontSize: 32, fontWeight: 800, color: TEAL, letterSpacing: "-1px", lineHeight: 1.1 }}>{value}</div>
+      <div style={{ fontSize: 11, fontWeight: 700, color: DARK_TEAL, marginTop: 6, lineHeight: 1.3 }}>{label}</div>
+      <div style={{ fontSize: 10, color: SLATE, marginTop: 2 }}>{sub}</div>
+      <div style={{ fontSize: 9, color: "#aaa", marginTop: 4, fontStyle: "italic" }}>{source}</div>
+    </div>
+  );
+}
 
-      <div style={{ padding: "40px", maxWidth: "1200px", margin: "0 auto" }}>
-        <div style={{ display: "flex", gap: 10, marginBottom: 35, background: "white", padding: 8, borderRadius: 15, width: "fit-content", boxShadow: "0 2px 4px rgba(0,0,0,0.05)" }}>
-          {["stats", "users", "content", "config"].map(t => (
-            <button key={t} onClick={() => setActiveTab(t)} className={`tab-btn ${activeTab === t ? "active" : ""}`}>
-              {t === "stats" && "📈 Statistiques"}
-              {t === "users" && "👥 Utilisateurs"}
-              {t === "content" && "📝 Gestion du Contenu"}
-              {t === "config" && "⚙️ Configuration"}
+function AxeCard({ axe, isOpen, onToggle }) {
+  return (
+    <div
+      onClick={onToggle}
+      style={{
+        background: isOpen ? "#fff" : "#F8F8FA",
+        borderRadius: 10,
+        border: `1.5px solid ${isOpen ? axe.color : "#e0e0e0"}`,
+        cursor: "pointer",
+        transition: "all 0.35s ease",
+        overflow: "hidden",
+        boxShadow: isOpen ? `0 8px 32px ${axe.color}22` : "0 2px 8px rgba(0,0,0,0.04)",
+      }}
+    >
+      {/* Header */}
+      <div style={{ padding: "16px 20px", display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{
+          width: 44, height: 44, borderRadius: 10, background: `${axe.color}15`,
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
+          flexShrink: 0, border: `1.5px solid ${axe.color}30`,
+        }}>
+          {axe.icon}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: axe.color, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            {axe.tag}
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: NAVY, marginTop: 2, lineHeight: 1.3 }}>
+            {axe.title}
+          </div>
+        </div>
+        <div style={{
+          width: 28, height: 28, borderRadius: "50%", background: isOpen ? axe.color : "#f0f0f0",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          color: isOpen ? "#fff" : SLATE, fontSize: 16, fontWeight: 700, flexShrink: 0,
+          transition: "all 0.3s ease",
+        }}>
+          {isOpen ? "−" : "+"}
+        </div>
+      </div>
+
+      {/* Assertion bar */}
+      <div style={{
+        padding: "0 20px 12px",
+        fontSize: 12, fontWeight: 600, color: SLATE, lineHeight: 1.4,
+        fontStyle: "italic",
+      }}>
+        {axe.assertion}
+      </div>
+
+      {/* Expanded content */}
+      <div style={{
+        maxHeight: isOpen ? 600 : 0,
+        opacity: isOpen ? 1 : 0,
+        transition: "all 0.4s ease",
+        overflow: "hidden",
+      }}>
+        <div style={{ borderTop: `1px solid ${axe.color}20`, padding: "16px 20px" }}>
+          {axe.bullets.map((b, i) => (
+            <div key={i} style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "flex-start" }}>
+              <div style={{
+                width: 6, height: 6, borderRadius: "50%", background: axe.color,
+                marginTop: 5, flexShrink: 0,
+              }} />
+              <div style={{ fontSize: 12, color: NAVY, lineHeight: 1.5 }}>{b}</div>
+            </div>
+          ))}
+
+          {/* Implication box */}
+          <div style={{
+            background: `${axe.color}08`, borderLeft: `3px solid ${axe.color}`,
+            padding: "10px 14px", borderRadius: "0 6px 6px 0", marginTop: 12,
+          }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: axe.color, marginBottom: 3, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Implication Sofinco
+            </div>
+            <div style={{ fontSize: 11.5, color: NAVY, lineHeight: 1.45, fontWeight: 500 }}>
+              {axe.implication}
+            </div>
+          </div>
+
+          {/* Sources */}
+          <div style={{ fontSize: 9, color: "#aaa", marginTop: 10, lineHeight: 1.4, fontStyle: "italic" }}>
+            {axe.sources}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const sourceBrands = [
+  { name: "McKinsey", color: "#003E74", bg: "#E8EFF6" },
+  { name: "BCG", color: "#00A551", bg: "#E5F5EC" },
+  { name: "Bain", color: "#CC0000", bg: "#FBEAEA" },
+  { name: "Accenture", color: "#A100FF", bg: "#F3E5FF" },
+  { name: "Gartner", color: "#003F72", bg: "#E8EFF6" },
+  { name: "MIT Sloan Review", color: "#A31F34", bg: "#F6E8EB" },
+  { name: "MIT Tech Review", color: "#E63946", bg: "#FDE8EA" },
+  { name: "HBR", color: "#C8102E", bg: "#FBEAEA" },
+  { name: "Wharton", color: "#004785", bg: "#E5EFF8" },
+];
+
+function App() {
+  const [session, setSession] = useState(null);
+  const [isAdminView, setIsAdminView] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [openAxe, setOpenAxe] = useState(null);
+  const [section, setSection] = useState("overview");
+  const [openGroup, setOpenGroup] = useState(null);
+
+  // Global Site Data State
+  const [siteData, setSiteData] = useState({
+    kpis: kpis,
+    axes: axes,
+    perspectives: perspectives,
+    settings: {
+      title: "IA WATCH",
+      emoji: "📡",
+      subtitle: "Impact de l'IA sur l'économie, les entreprises et l'emploi"
+    }
+  });
+
+  useEffect(() => {
+    if (supabaseClient) {
+      // 1. Auth session
+      supabaseClient.auth.getSession().then(({ data: { session } }) => {
+        setSession(session);
+      });
+
+      const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+        setSession(session);
+      });
+
+      // 2. Fetch site content
+      fetchSiteContent();
+
+      return () => subscription.unsubscribe();
+    }
+  }, []);
+
+  const fetchSiteContent = async () => {
+    try {
+      const { data, error } = await supabaseClient.from('site_content').select('*');
+      if (data && !error) {
+        const newData = { ...siteData };
+        data.forEach(item => {
+          if (item.key === 'kpis') newData.kpis = item.value;
+          if (item.key === 'axes') newData.axes = item.value;
+          if (item.key === 'perspectives') newData.perspectives = item.value;
+          if (item.key === 'settings') newData.settings = item.value;
+        });
+        setSiteData(newData);
+      }
+    } catch (err) {
+      console.warn("Using default content (Supabase table 'site_content' not found yet)");
+    }
+  };
+
+  const handleLogout = async () => {
+    if (supabaseClient) {
+      await supabaseClient.auth.signOut();
+      setSession(null);
+      setIsAdminView(false);
+    }
+  };
+
+  if (!session && (SUPABASE_URL !== "YOUR_SUPABASE_URL")) {
+    return <Login onLogin={(user) => setSession({ user })} />;
+  }
+
+  if (isAdminView) {
+    return <AdminDashboard 
+      user={session?.user} 
+      onBack={() => setIsAdminView(false)} 
+      siteData={siteData}
+      onUpdateData={(newData) => setSiteData(newData)}
+    />;
+  }
+
+  if (showWelcome) {
+    return (
+      <div style={{
+        minHeight: "100vh",
+        background: "#fff",
+        fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        padding: "40px 20px",
+      }}>
+        {/* Top bar with logout */}
+        <div style={{ position: "absolute", top: 20, right: 20, display: "flex", gap: "20px", alignItems: "center" }}>
+          {session?.user?.email?.includes('admin') && (
+            <button 
+              onClick={() => setIsAdminView(true)} 
+              style={{ background: "#00959715", border: "1px solid #00959730", color: TEAL, padding: "6px 12px", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "700" }}
+            >
+              Console Admin ⚙️
             </button>
+          )}
+          {session && (
+            <button onClick={handleLogout} style={{ background: "none", border: "none", color: SLATE, cursor: "pointer", fontSize: "12px", fontWeight: "600" }}>
+              Déconnexion
+            </button>
+          )}
+        </div>
+
+        {/* Title block */}
+        <div style={{ textAlign: "center", maxWidth: 600, marginBottom: 12 }}>
+          <div style={{
+            fontSize: 42, marginBottom: 8,
+          }}>
+            {siteData.settings.emoji}
+          </div>
+          <div style={{
+            fontSize: 32, fontWeight: 800, letterSpacing: "0.12em",
+            textTransform: "uppercase", marginBottom: 14,
+          }}>
+            <span style={{ color: TEAL }}>{siteData.settings.title.slice(0, 2)}</span><span style={{ color: NAVY }}>{siteData.settings.title.slice(2)}</span>
+          </div>
+          <div style={{
+            fontSize: 20, fontWeight: 600, color: SLATE, lineHeight: 1.35,
+          }}>
+            Impact de l'<span style={{ color: TEAL }}>IA</span> sur l'économie,<br/>les entreprises et l'emploi
+          </div>
+        </div>
+
+        {/* Teal bar */}
+        <div style={{ width: 50, height: 3, background: TEAL, borderRadius: 2, margin: "16px 0 20px" }} />
+
+        {/* Date */}
+        <div style={{
+          fontSize: 14, color: SLATE, fontWeight: 600, marginBottom: 6,
+          display: "flex", alignItems: "center", gap: 8,
+        }}>
+          <span style={{
+            display: "inline-block", width: 8, height: 8, borderRadius: "50%",
+            background: TEAL, opacity: 0.5,
+          }} />
+          Janvier — Mai 2026
+        </div>
+        <div style={{
+          fontSize: 14, color: SLATE, fontWeight: 600, marginBottom: 32,
+        }}>
+          Sofinco / MCD
+        </div>
+
+        {/* Subtitle */}
+        <div style={{
+          fontSize: 12, color: "#8E93A8", textAlign: "center", marginBottom: 20,
+          letterSpacing: "0.04em", textTransform: "uppercase", fontWeight: 600,
+        }}>
+          Synthèse de 50 publications issues de
+        </div>
+
+        {/* Source logos - two rows, gray */}
+        <div style={{
+          display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8,
+          maxWidth: 560, marginBottom: 10,
+        }}>
+          {sourceBrands.slice(0, 5).map((s, i) => (
+            <div key={i} style={{
+              padding: "6px 14px", borderRadius: 6,
+              background: "#F0F0F2", border: "1px solid #E0E0E4",
+            }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#555" }}>{s.name}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{
+          display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8,
+          maxWidth: 560, marginBottom: 40,
+        }}>
+          {sourceBrands.slice(5).map((s, i) => (
+            <div key={i} style={{
+              padding: "6px 14px", borderRadius: 6,
+              background: "#F0F0F2", border: "1px solid #E0E0E4",
+            }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#555" }}>{s.name}</span>
+            </div>
           ))}
         </div>
 
-        {activeTab === "stats" && (
-          <div className="fade-in">
-            <div style={{ display: "flex", gap: 20, marginBottom: 30 }}>
-              <div className="admin-card" style={{ flex: 1 }}>
-                <div className="kpi-label">Total Utilisateurs</div>
-                <div className="kpi-val">2</div>
-                <div style={{ fontSize: 11, color: "#10B981", fontWeight: 700 }}>↑ 100% croissance</div>
+        {/* CTA */}
+        <div style={{ display: "flex", gap: "16px" }}>
+          <button
+            onClick={() => setShowWelcome(false)}
+            style={{
+              padding: "14px 44px", borderRadius: 10,
+              border: "none", background: TEAL, color: "#fff",
+              fontSize: 15, fontWeight: 700, cursor: "pointer",
+              letterSpacing: "0.04em",
+              boxShadow: `0 4px 20px ${TEAL}40`,
+              transition: "all 0.25s ease",
+            }}
+          >
+            Explorer le rapport →
+          </button>
+        </div>
+
+        {/* Footer */}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "#F5F6F8",
+      fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
+      color: NAVY,
+    }}>
+      {/* Header */}
+      <div style={{
+        background: "#fff",
+        borderBottom: `2px solid ${TEAL}`,
+        padding: "16px 24px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        flexWrap: "wrap", gap: 12,
+        position: "sticky", top: 0, zIndex: 100,
+        backdropFilter: "blur(12px)", boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+      }}>
+        <div onClick={() => setShowWelcome(true)} style={{ cursor: "pointer" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: TEAL, letterSpacing: "0.15em", textTransform: "uppercase" }}>
+            Sofinco / MCD
+          </div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: NAVY, marginTop: 2 }}>
+            {siteData.settings.title} — Mai 2026
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <button onClick={handleLogout} style={{
+            padding: "6px 12px", borderRadius: 6, border: "1px solid #ddd", cursor: "pointer",
+            fontSize: 12, fontWeight: 600, background: "white", color: SLATE,
+            marginRight: 10
+          }}>
+            Déconnexion
+          </button>
+          {[
+            { key: "overview", label: "Synthèse" },
+            { key: "axes", label: "Thématiques" },
+            { key: "perspectives", label: "Perspectives" },
+            { key: "sources", label: "Sources" },
+          ].map(({ key, label }) => (
+            <button key={key} onClick={() => setSection(key)} style={{
+              padding: "6px 14px", borderRadius: 6, border: "none", cursor: "pointer",
+              fontSize: 12, fontWeight: 600,
+              background: section === key ? TEAL : "#ECEDF0",
+              color: section === key ? "#fff" : SLATE,
+              transition: "all 0.2s ease",
+            }}>
+              {label}
+            </button>
+          ))}
+          
+          {/* Added Admin link to Header */}
+          {session?.user?.email?.includes('admin') && (
+            <button onClick={() => setIsAdminView(true)} style={{
+              padding: "6px 14px", borderRadius: 6, border: `1.5px solid ${TEAL}`, cursor: "pointer",
+              fontSize: 12, fontWeight: 700, background: "white", color: TEAL,
+              marginLeft: 8
+            }}>
+              Admin ⚙️
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px 60px" }}>
+
+        {/* ═══ OVERVIEW ═══ */}
+        {section === "overview" && (
+          <div>
+            {/* Hero */}
+            <div style={{
+              background: "#fff",
+              borderRadius: 14,
+              padding: "32px 28px",
+              border: "1px solid #E0E2E8", boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+              marginBottom: 24,
+            }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: TEAL, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 6 }}>
+                EXECUTIVE SUMMARY
               </div>
-              <div className="admin-card" style={{ flex: 1 }}>
-                <div className="kpi-label">Inscriptions (24h)</div>
-                <div className="kpi-val" style={{ color: "#E07A2F" }}>0</div>
-                <div style={{ fontSize: 11, color: SLATE, fontWeight: 700 }}>Stable activité</div>
+              <div style={{ fontSize: 20, fontWeight: 700, color: NAVY, lineHeight: 1.35, marginBottom: 16 }}>
+                Le S1 2026 marque un basculement : de l'expérimentation à l'exigence de résultats — et à la confrontation avec l'écart entre ambition et exécution
               </div>
-              <div className="admin-card" style={{ flex: 1 }}>
-                <div className="kpi-label">Statut Serveur</div>
-                <div className="kpi-val" style={{ color: "#10B981" }}>Opérationnel</div>
-                <div style={{ fontSize: 11, color: SLATE, fontWeight: 700 }}>Latence: 38ms</div>
+              <div style={{ width: 60, height: 3, background: TEAL, borderRadius: 2, marginBottom: 20 }} />
+              <div style={{ fontSize: 13, color: SLATE, lineHeight: 1.6 }}>
+                9 sources de référence scannées · 50 publications 2026 analysées · 6 axes thématiques identifiés
               </div>
             </div>
-            <div className="admin-card">
-              <h3 style={{ marginBottom: 25, fontSize: 16 }}>Évolution des inscriptions (7 derniers jours)</h3>
-              <div style={{ height: 220, display: "flex", alignItems: "end", gap: 15 }}>
-                {[20, 30, 25, 40, 20, 95, 30].map((h, i) => (
-                  <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-                    <div className="chart-bar" style={{ height: `${h}%`, width: "100%" }}></div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: SLATE }}>{['sam','dim','lun','mar','mer','jeu','ven'][i]}</div>
+
+            {/* KPIs */}
+            <div style={{
+              background: "#fff", borderRadius: 12, padding: "8px 0",
+              display: "flex", flexWrap: "wrap", marginBottom: 24,
+              boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
+            }}>
+              {siteData.kpis.map((k, i) => (
+                <KPICard key={i} {...k} delay={i * 150 + 200} />
+              ))}
+            </div>
+
+            {/* 3 signals */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {[
+                {
+                  num: "1", color: TEAL, title: "L'IA agentique s'impose comme paradigme",
+                  text: "Gartner positionne l'IA agentique au sommet des attentes gonflées. Bain observe une migration vers des agents persistants capables de maintenir un contexte sur la durée, posant des questions inédites de gouvernance mémoire."
+                },
+                {
+                  num: "2", color: ORANGE, title: "Le paradoxe ROI atteint son point critique",
+                  text: "Seulement 28% des cas d'usage atteignent leur ROI. L'IA entre dans le « Trough of Disillusionment ». Les boards exigent des résultats bottom-line — les metrics de déploiement ne suffisent plus."
+                },
+                {
+                  num: "3", color: CORAL, title: "Le facteur humain est le vrai goulot d'étranglement",
+                  text: "Les freins sont psychologiques, pas techniques. L'IA intensifie le travail plutôt qu'elle ne le réduit (HBR) et amplifie les inégalités de performance entre utilisateurs forts et faibles (MIT Sloan)."
+                },
+              ].map((s, i) => (
+                <div key={i} onClick={() => { setSection("axes"); setOpenAxe(s.num === "1" ? 1 : s.num === "2" ? 2 : 3); }} style={{
+                  background: "#fff", borderRadius: 10,
+                  padding: "16px 20px", display: "flex", gap: 16, alignItems: "flex-start",
+                  border: "1px solid #E0E2E8",
+                  cursor: "pointer", transition: "all 0.2s ease",
+                }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 8, background: `${s.color}15`,
+                    color: s.color, display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 16, fontWeight: 800, flexShrink: 0, border: `1.5px solid ${s.color}40`,
+                  }}>
+                    {s.num}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 4 }}>{s.title}</div>
+                    <div style={{ fontSize: 12, color: SLATE, lineHeight: 1.5 }}>{s.text}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Navigate CTA */}
+            <div style={{ textAlign: "center", marginTop: 28 }}>
+              <button onClick={() => setSection("axes")} style={{
+                padding: "10px 28px", borderRadius: 8, border: `1.5px solid ${TEAL}`,
+                background: "transparent", color: TEAL, fontSize: 13, fontWeight: 700,
+                cursor: "pointer", letterSpacing: "0.03em",
+                transition: "all 0.2s ease",
+              }}>
+                Explorer les 6 axes →
+              </button>
+            </div>
+
+            <div style={{
+              marginTop: 28, padding: "14px 0",
+              borderTop: "1px solid #E0E2E8",
+              fontSize: 9, color: "#A0A4B8", lineHeight: 1.5,
+            }}>
+              {FOOTER_TEXT}
+            </div>
+          </div>
+        )}
+
+        {/* ═══ 6 AXES ═══ */}
+        {section === "axes" && (
+          <div>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: TEAL, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 4 }}>
+                ANALYSE THÉMATIQUE
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: NAVY, lineHeight: 1.3 }}>
+                6 axes structurent le paysage IA du S1 2026
+              </div>
+              <div style={{ fontSize: 12, color: "#8E93A8", marginTop: 6 }}>
+                Cliquez sur un axe pour afficher l'analyse détaillée, les sources et les implications Sofinco
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {siteData.axes.map((axe) => (
+                <AxeCard
+                  key={axe.id}
+                  axe={axe}
+                  isOpen={openAxe === axe.id}
+                  onToggle={() => setOpenAxe(openAxe === axe.id ? null : axe.id)}
+                />
+              ))}
+            </div>
+
+            {/* Meta-analysis box */}
+            <div style={{
+              background: "#fff", borderRadius: 10,
+              padding: "20px", marginTop: 20,
+              border: "1px solid #E0E2E8", boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: TEAL, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
+                MÉTA-ANALYSE
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: NAVY, marginBottom: 10, lineHeight: 1.4 }}>
+                Les cabinets poussent l'urgence, les académiques nuancent — l'écart entre perception et ROI mesuré reflète un biais de désirabilité sociale
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                {[
+                  { label: "Convergence", text: "Agents = paradigme 2026, gap adoption/valeur = problème central, facteur humain = discriminant", color: GREEN },
+                  { label: "Divergence", text: "Surveys perception (HBR : unanimité sur valeur) vs audits résultat (Gartner : 1/50). Signal Gartner plus fiable.", color: ORANGE },
+                  { label: "Biais", text: "Cabinets : narratif d'urgence commercial. Gartner : frameworks propriétaires. Académiques : périmètres étroits. Aucun ne couvre la banque de détail européenne.", color: CORAL },
+                ].map((item, i) => (
+                  <div key={i} style={{
+                    flex: "1 1 250px", background: `${item.color}12`, borderRadius: 8,
+                    padding: "10px 14px", borderLeft: `3px solid ${item.color}`,
+                  }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: item.color, marginBottom: 3, textTransform: "uppercase" }}>
+                      {item.label}
+                    </div>
+                    <div style={{ fontSize: 11, color: NAVY, lineHeight: 1.45 }}>
+                      {item.text}
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
+
+            <div style={{
+              marginTop: 28, padding: "14px 0",
+              borderTop: "1px solid #E0E2E8",
+              fontSize: 9, color: "#A0A4B8", lineHeight: 1.5,
+            }}>
+              {FOOTER_TEXT}
+            </div>
           </div>
         )}
 
-        {activeTab === "users" && (
-          <div className="admin-card fade-in">
-            <h3 style={{ marginBottom: 20 }}>Membres IA Watch</h3>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ textAlign: "left", borderBottom: "2px solid #F1F5F9", color: SLATE, fontSize: 11 }}>
-                  <th style={{ padding: 15 }}>UTILISATEUR</th>
-                  <th>RÔLE</th>
-                  <th>STATUT</th>
-                  <th>DERNIÈRE CONNEXION</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr style={{ borderBottom: "1px solid #F1F5F9" }}>
-                  <td style={{ padding: 15, fontWeight: 700 }}>admin@iawatch.com</td>
-                  <td><span style={{ padding: "4px 10px", borderRadius: 20, background: "#EBF7F7", color: TEAL, fontSize: 10, fontWeight: 900 }}>ADMIN</span></td>
-                  <td><span style={{ display: "inline-block", width: 8, height: 8, background: "#10B981", borderRadius: "50%", marginRight: 6 }}></span> Actif</td>
-                  <td style={{ fontSize: 12, color: SLATE }}>Il y a 5 min</td>
-                </tr>
-              </tbody>
-            </table>
+        {/* ═══ PERSPECTIVES ═══ */}
+        {section === "perspectives" && (
+          <div>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: TEAL, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 4 }}>
+                PERSPECTIVES 2026-2027
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: NAVY, lineHeight: 1.3 }}>
+                Le creux de désillusion se prolongera — le « deskilling silencieux » crée un risque opérationnel latent
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {siteData.perspectives.map((p, i) => (
+                <div key={i} style={{
+                  background: "#fff", borderRadius: 10,
+                  padding: "16px 20px", borderLeft: `4px solid ${p.color}`,
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+                }}>
+                  <div style={{
+                    display: "inline-block", padding: "2px 10px", borderRadius: 4,
+                    background: `${p.color}18`, color: p.color, fontSize: 10,
+                    fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em",
+                    marginBottom: 6,
+                  }}>
+                    {p.type}
+                  </div>
+                  <div style={{ fontSize: 13, color: NAVY, lineHeight: 1.55 }}>{p.text}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Trilemme visual */}
+            <div style={{
+              background: "#fff", borderRadius: 12, padding: "24px",
+              marginTop: 24, border: "1px solid #E0E2E8", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", textAlign: "center",
+            }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: TEAL, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14 }}>
+                TRILEMME STRATÉGIQUE MODÈLES IA
+              </div>
+              <div style={{ display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap" }}>
+                {[
+                  { label: "Performance", sub: "Modèles frontière US", sub2: "OpenAI · Anthropic · Google", color: BLUE, icon: "🇺🇸" },
+                  { label: "Contrôle", sub: "Souveraineté européenne", sub2: "Mistral · AI Act · RGPD", color: VIOLET, icon: "🇪🇺" },
+                  { label: "Coût", sub: "Open-source chinois", sub2: "DeepSeek · Alibaba · Qwen", color: GREEN, icon: "🇨🇳" },
+                ].map((t, i) => (
+                  <div key={i} style={{
+                    flex: "1 1 160px", maxWidth: 220, background: `${t.color}12`,
+                    borderRadius: 10, padding: "18px 14px", border: `1.5px solid ${t.color}30`,
+                    transition: "all 0.2s ease",
+                  }}>
+                    <div style={{ fontSize: 28, marginBottom: 6 }}>{t.icon}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: t.color }}>{t.label}</div>
+                    <div style={{ fontSize: 11, color: SLATE, marginTop: 4 }}>{t.sub}</div>
+                    <div style={{ fontSize: 10, color: "#A0A4B8", marginTop: 2 }}>{t.sub2}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize: 11, color: "#8E93A8", marginTop: 14, lineHeight: 1.4 }}>
+                Sofinco doit arbitrer ce trilemme — il structure les architectures data/IA pour 3-5 ans
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{
+              marginTop: 28, padding: "14px 0",
+              borderTop: "1px solid #E0E2E8",
+              fontSize: 9, color: "#A0A4B8", lineHeight: 1.5,
+            }}>
+              {FOOTER_TEXT}
+            </div>
           </div>
         )}
 
-        {activeTab === "content" && (
-          <div className="admin-card fade-in">
-             <h3 style={{ marginBottom: 20 }}>Éditeur de Données JSON</h3>
-             <textarea className="form-control" style={{ height: 450, fontFamily: "monospace", fontSize: 13, padding: 20 }} defaultValue={JSON.stringify(siteData.axes, null, 2)} id="axes-json" />
-             <button className="btn-primary" style={{ marginTop: 20 }} onClick={async () => {
-                setSaving(true);
-                try {
-                  const val = JSON.parse(document.getElementById('axes-json').value);
-                  await supabaseClient.from('site_content').upsert({ key: 'axes', value: val });
-                  onUpdateData({ ...siteData, axes: val });
-                  alert("Données synchronisées !");
-                } catch(e) { alert("JSON Invalide"); }
-                setSaving(false);
-             }}>{saving ? "Sauvegarde..." : "Enregistrer les modifications"}</button>
+        {/* ═══ SOURCES ═══ */}
+        {section === "sources" && (
+          <div>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: TEAL, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 4 }}>
+                CORPUS DE RÉFÉRENCE
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: NAVY, lineHeight: 1.3 }}>
+                50 publications 2026 issues de 9 sources
+              </div>
+              <div style={{ fontSize: 12, color: "#8E93A8", marginTop: 6 }}>
+                Cliquez sur une source pour afficher ses publications · Tous les liens sont cliquables
+              </div>
+            </div>
+
+            {/* Source count bar */}
+            <div style={{
+              display: "flex", borderRadius: 8, overflow: "hidden", height: 8, marginBottom: 20,
+              background: "#E8E9ED",
+            }}>
+              {sourceGroups.map((g, i) => (
+                <div key={i} style={{
+                  flex: g.pubs.length, background: g.color, opacity: 0.8,
+                  borderRight: i < sourceGroups.length - 1 ? "1px solid rgba(0,0,0,0.3)" : "none",
+                }} />
+              ))}
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {sourceGroups.map((group, gi) => (
+                <div key={gi} style={{
+                  background: openGroup === gi ? "#fff" : "#F8F8FA",
+                  borderRadius: 10,
+                  border: `1.5px solid ${openGroup === gi ? group.color : "#e0e0e0"}`,
+                  overflow: "hidden",
+                  transition: "all 0.3s ease",
+                  boxShadow: openGroup === gi ? `0 6px 24px ${group.color}18` : "none",
+                }}>
+                  <div
+                    onClick={() => setOpenGroup(openGroup === gi ? null : gi)}
+                    style={{
+                      padding: "12px 18px", display: "flex", alignItems: "center", gap: 12,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div style={{
+                      width: 6, height: 32, borderRadius: 3, background: group.color, flexShrink: 0,
+                    }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: NAVY }}>{group.name}</div>
+                    </div>
+                    <div style={{
+                      padding: "2px 10px", borderRadius: 12,
+                      background: `${group.color}15`, color: group.color,
+                      fontSize: 12, fontWeight: 700,
+                    }}>
+                      {group.pubs.length}
+                    </div>
+                    <div style={{
+                      width: 24, height: 24, borderRadius: "50%",
+                      background: openGroup === gi ? group.color : "#f0f0f0",
+                      color: openGroup === gi ? "#fff" : SLATE,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 14, fontWeight: 700, flexShrink: 0,
+                      transition: "all 0.3s ease",
+                    }}>
+                      {openGroup === gi ? "−" : "+"}
+                    </div>
+                  </div>
+
+                  <div style={{
+                    maxHeight: openGroup === gi ? 800 : 0,
+                    opacity: openGroup === gi ? 1 : 0,
+                    transition: "all 0.35s ease",
+                    overflow: "hidden",
+                  }}>
+                    <div style={{ padding: "0 18px 14px", borderTop: `1px solid ${group.color}15` }}>
+                      {group.pubs.map((pub, pi) => (
+                        <a
+                          key={pi}
+                          href={pub.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: "flex", alignItems: "baseline", gap: 10,
+                            padding: "8px 0",
+                            borderBottom: pi < group.pubs.length - 1 ? "1px solid #f0f0f0" : "none",
+                            textDecoration: "none",
+                          }}
+                        >
+                          <div style={{
+                            fontSize: 10, color: SLATE, flexShrink: 0, minWidth: 70,
+                            fontWeight: 600,
+                          }}>
+                            {pub.date}
+                          </div>
+                          <div style={{
+                            fontSize: 12, color: NAVY, lineHeight: 1.4, flex: 1,
+                          }}>
+                            {pub.title}
+                            <span style={{ fontSize: 10, color: group.color, marginLeft: 6 }}>↗</span>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{
+              marginTop: 20, padding: "14px 0",
+              borderTop: "1px solid #E0E2E8",
+              fontSize: 9, color: "#A0A4B8", lineHeight: 1.5,
+            }}>
+              {FOOTER_TEXT}
+            </div>
           </div>
         )}
       </div>
     </div>
   );
-};
-
-// --- App ---
-const App = () => {
-  const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [showWelcome, setShowWelcome] = useState(true);
-  const [isAdminView, setIsAdminView] = useState(false);
-  const [siteData, setSiteData] = useState(FULL_CONTENT);
-  const [section, setSection] = useState("overview");
-
-  useEffect(() => {
-    if (!supabaseClient) { setLoading(false); return; }
-    supabaseClient.auth.getSession().then(({ data: { session } }) => { setSession(session); setLoading(false); });
-    supabaseClient.auth.onAuthStateChange((_e, s) => setSession(s));
-    const fetchData = async () => {
-      const { data } = await supabaseClient.from('site_content').select('*');
-      if (data && data.length > 0) {
-        const update = { ...FULL_CONTENT };
-        data.forEach(d => { if (d.value) update[d.key] = d.value; });
-        setSiteData(update);
-      }
-    };
-    fetchData();
-  }, []);
-
-  if (showWelcome && !session) return <WelcomeScreen onExplore={() => setShowWelcome(false)} siteData={siteData} />;
-  if (loading) return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, color: TEAL }}>SYSTÈME IA WATCH...</div>;
-  if (!session) return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#071621", padding: "20px" }}>
-      <div className="fade-in" style={{ background: "white", padding: "50px", borderRadius: "30px", width: "100%", maxWidth: "450px" }}>
-        <button onClick={() => setShowWelcome(true)} style={{ background: "none", border: "none", color: TEAL, cursor: "pointer", marginBottom: "30px", fontWeight: "900" }}>← ACCUEIL</button>
-        <h2 style={{ fontSize: 32, fontWeight: 900, marginBottom: 40, letterSpacing: "-1.5px" }}>Accès Membre</h2>
-        <form onSubmit={async (e) => {
-          e.preventDefault();
-          const { error } = await supabaseClient.auth.signInWithPassword({ email: e.target.email.value, password: e.target.password.value });
-          if (error) alert("Identifiants incorrects.");
-        }}>
-          <input name="email" className="input-field" type="email" placeholder="Email" required />
-          <input name="password" className="input-field" type="password" placeholder="Mot de passe" required />
-          <button type="submit" className="btn-primary" style={{ width: "100%", padding: "18px", fontSize: 16 }}>DÉVERROUILLER LE RAPPORT</button>
-        </form>
-      </div>
-    </div>
-  );
-
-  if (isAdminView) return <AdminDashboard user={session.user} onBack={() => setIsAdminView(false)} siteData={siteData} onUpdateData={setSiteData} />;
-
-  return (
-    <div style={{ minHeight: "100vh" }}>
-      <header style={{ background: "white", padding: "20px 40px", borderBottom: `3px solid ${TEAL}`, display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, zIndex: 100 }}>
-        <div>
-          <div style={{ fontSize: 10, fontWeight: 900, color: TEAL, letterSpacing: "1px" }}>SOFINCO / MCD</div>
-          <div style={{ fontSize: 20, fontWeight: 900 }}>{siteData.settings.title} — Mai 2026</div>
-        </div>
-        <div style={{ display: "flex", gap: 12 }}>
-          {session.user.email.includes('admin') && <button onClick={() => setIsAdminView(true)} className="btn-primary" style={{ background: "#EBF7F7", color: TEAL, fontSize: 12 }}>ADMIN ⚙️</button>}
-          {["overview", "axes", "perspectives", "sources"].map(s => (
-            <button key={s} onClick={() => setSection(s)} style={{ padding: "10px 18px", borderRadius: 10, border: "none", background: section === s ? TEAL : "#F1F5F9", color: section === s ? "white" : SLATE, fontWeight: 700, cursor: "pointer", textTransform: "uppercase", fontSize: 11 }}>{s}</button>
-          ))}
-          <button onClick={() => supabaseClient.auth.signOut()} style={{ background: NAVY, color: "white", padding: "10px 18px", borderRadius: 10, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 11 }}>SORTIR</button>
-        </div>
-      </header>
-      
-      <main style={{ padding: "50px 20px", maxWidth: "1000px", margin: "0 auto" }}>
-        {section === "overview" && (
-          <div className="fade-in">
-            <div className="admin-card" style={{ padding: 50, borderLeft: `12px solid ${TEAL}`, marginBottom: 40 }}>
-               <h2 style={{ fontSize: 32, fontWeight: 900, marginBottom: 20, lineHeight: 1.2 }}>Le S1 2026 marque un basculement : de l'expérimentation à l'exigence de résultats.</h2>
-               <p style={{ fontSize: 18, color: SLATE, lineHeight: 1.6 }}>Analyse consolidée de 50 publications stratégiques · 9 sources de référence scannées · 6 axes identifiés.</p>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 20 }}>
-               {siteData.kpis.map((k, i) => (
-                 <div key={i} className="admin-card" style={{ textAlign: "center" }}>
-                   <div className="kpi-val">{k.value}</div>
-                   <div className="kpi-label">{k.label}</div>
-                   <div style={{ fontSize: 10, color: SLATE, marginTop: 5 }}>{k.sub}</div>
-                 </div>
-               ))}
-            </div>
-          </div>
-        )}
-        {section === "axes" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
-            {siteData.axes.map((axe, i) => <AxeCard key={i} axe={axe} />)}
-          </div>
-        )}
-      </main>
-    </div>
-  );
-};
-
-const WelcomeScreen = ({ onExplore, siteData }) => (
-  <div style={{ minHeight: "100vh", background: "#071621", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 20px", textAlign: "center" }}>
-    <div style={{ maxWidth: "850px" }} className="fade-in">
-      <div style={{ fontSize: 80, marginBottom: 20 }}>{siteData.settings.emoji}</div>
-      <h1 style={{ fontSize: "clamp(45px, 10vw, 95px)", fontWeight: 900, marginBottom: 25, letterSpacing: "-3px" }}>{siteData.settings.title}</h1>
-      <p style={{ fontSize: 24, color: "#A0AEC0", marginBottom: 50, lineHeight: 1.5 }}>{siteData.settings.subtitle}</p>
-      <button onClick={onExplore} className="btn-primary" style={{ padding: "20px 60px", fontSize: 20, borderRadius: 15 }}>EXPLORER LE RAPPORT →</button>
-    </div>
-  </div>
-);
+}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
