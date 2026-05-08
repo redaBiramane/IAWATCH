@@ -127,9 +127,15 @@ const LoginPage = ({ onBack }) => {
         <form onSubmit={handleLogin}>
           <input className="input-field" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
           <input className="input-field" type="password" placeholder="Mot de passe" value={password} onChange={e => setPassword(e.target.value)} required />
-          {error && <div style={{ color: CORAL, fontSize: 13, marginBottom: 15 }}>{error}</div>}
+          {error && <div style={{ color: CORAL, fontSize: 13, marginBottom: 15, textAlign: "center", fontWeight: "600" }}>⚠️ {error}</div>}
           <button type="submit" className="btn-primary" style={{ width: "100%" }} disabled={loading}>{loading ? "Vérification..." : "Déverrouiller"}</button>
         </form>
+        
+        {/* Zone de Debug temporaire */}
+        <div style={{ marginTop: "30px", fontSize: "10px", color: "#4A5568", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "15px" }}>
+          DEBUG : URL Supabase : {SUPABASE_URL.startsWith('http') ? "✅ Configurée" : "❌ Non détectée"} | 
+          Clé : {SUPABASE_ANON_KEY.length > 20 ? "✅ OK" : "❌ Trop courte"}
+        </div>
       </div>
     </div>
   );
