@@ -8,12 +8,10 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #F5F6F8; color: #071621; }
   .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); }
-  .input-field { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #2D3748; background: rgba(0,0,0,0.2); color: white; margin-bottom: 15px; }
+  .input-field { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #ddd; background: #fff; color: #333; margin-bottom: 15px; }
   .btn-primary { background: #009597; color: white; padding: 12px 24px; border-radius: 10px; border: none; font-weight: 800; cursor: pointer; transition: 0.3s; }
-  .admin-card { background: white; padding: 25px; border-radius: 16px; border: 1px solid #e0e2e8; margin-bottom: 20px; }
-  .admin-tab-btn { padding: 10px 20px; border-radius: 8px; border: none; background: transparent; color: #666E8A; font-weight: 700; cursor: pointer; }
-  .admin-tab-btn.active { background: #00959715; color: #009597; }
-  .form-control { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 10px; font-family: inherit; }
+  .admin-card { background: white; padding: 25px; border-radius: 16px; border: 1px solid #e0e2e8; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+  .form-control { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 10px; font-family: inherit; font-size: 14px; }
   @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
@@ -29,7 +27,6 @@ const { useState, useEffect } = React;
 const TEAL = "#009597";
 const NAVY = "#071621";
 const SLATE = "#666E8A";
-const CORAL = "#F47682";
 
 // --- Supabase ---
 const SUPABASE_URL = "__SUPABASE_URL__"; 
@@ -38,37 +35,59 @@ const supabaseClient = (SUPABASE_URL && SUPABASE_URL.startsWith('http'))
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
 
-const defaultData = {
+// --- LE CONTENU STRATÉGIQUE (SAUVEGARDÉ ICI) ---
+const STRATEGIC_CONTENT = {
   kpis: [
-    { value: "$2 520 Mds", label: "Dépenses IA mondiales 2026" },
-    { value: "+44%", label: "Croissance investissements" },
-    { value: "17%", label: "Déploiement d'agents" },
-    { value: "28%", label: "Taux de succès ROI" }
+    { value: "$2 520 Mds", label: "Dépenses IA mondiales 2026", sub: "+44% YoY" },
+    { value: "28%", label: "Taux de succès ROI", sub: "use cases I&O" },
+    { value: "17%", label: "Déploiement réel d'agents", sub: "vs 60%+ prévu" },
+    { value: "50%", label: "CEOs dont le poste dépend du succès IA", sub: "Décideurs principaux" }
   ],
-  axes: [],
-  perspectives: [],
-  settings: { title: "IA WATCH", emoji: "📡", subtitle: "Synthèse stratégique exclusive." }
+  axes: [
+    {
+      id: 1, color: "#009597", icon: "🤖", tag: "AXE 1", title: "Agents autonomes & gouvernance",
+      assertion: "60% d'intention de déploiement mais 17% de réalité.",
+      bullets: ["30% du budget IA 2026 alloué à l'agentique", "Focus sur l'identité non-humaine et la gouvernance"],
+      implication: "Poser les fondations avant la prolifération."
+    },
+    {
+      id: 2, color: "#E07A2F", icon: "📉", tag: "AXE 2", title: "Le paradoxe ROI",
+      assertion: "Investissements records mais peu de valeur transformationnelle immédiate.",
+      bullets: ["Doublage des dépenses IA en 2026", "57% des échecs liés à des attentes irréalistes"],
+      implication: "Mesurer par processus transformé, pas par POC."
+    },
+    {
+      id: 3, color: "#F47682", icon: "🧠", tag: "AXE 3", title: "Facteur humain & Compétences",
+      assertion: "L'IA intensifie le travail plutôt qu'elle ne le réduit.",
+      bullets: ["50% des emplois US transformés d'ici 2-3 ans", "L'IA ajoute de la charge cognitive (vérification)"],
+      implication: "Construire des dispositifs de jugement critique."
+    }
+  ],
+  perspectives: [
+    { type: "Hypothèse", text: "Le creux de désillusion se prolonge au S2 2026.", color: "#E07A2F" },
+    { type: "Signal faible", text: "Émergence du rôle 'Agent Operations Officer'.", color: "#F47682" }
+  ],
+  settings: { title: "IA WATCH", emoji: "📡", subtitle: "Synthèse stratégique exclusive pour Sofinco / MCD." }
 };
 
 // --- Composants UI ---
 const AxeCard = ({ axe }) => {
   const [isOpen, setIsOpen] = useState(false);
-  if (!axe) return null;
   return (
     <div onClick={() => setIsOpen(!isOpen)} style={{ background: "#fff", borderRadius: 16, border: `1.5px solid ${isOpen ? (axe.color || TEAL) : "#eee"}`, padding: "24px", cursor: "pointer", transition: "0.3s", marginBottom: "15px", animation: "fadeInUp 0.5s ease" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-        <div style={{ fontSize: 24, background: `${axe.color || TEAL}15`, padding: 10, borderRadius: 12 }}>{axe.icon || "🤖"}</div>
+        <div style={{ fontSize: 24, background: `${axe.color || TEAL}15`, padding: 12, borderRadius: 12 }}>{axe.icon || "🤖"}</div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 10, fontWeight: 900, color: axe.color || TEAL }}>{axe.tag || "AXE"}</div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: NAVY }}>{axe.title || "Titre de l'axe"}</div>
+          <div style={{ fontSize: 10, fontWeight: 900, color: axe.color || TEAL }}>{axe.tag}</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: NAVY }}>{axe.title}</div>
         </div>
       </div>
       {isOpen && (
         <div style={{ marginTop: 20, paddingTop: 20, borderTop: "1px solid #eee" }}>
-          {axe.bullets && axe.bullets.map((b, i) => <div key={i} style={{ fontSize: 14, marginBottom: 10, lineHeight: 1.5, color: "#333" }}>• {b}</div>)}
+          {axe.bullets && axe.bullets.map((b, i) => <div key={i} style={{ fontSize: 14, marginBottom: 10, lineHeight: 1.5 }}>• {b}</div>)}
           <div style={{ background: `${axe.color || TEAL}08`, padding: 15, borderRadius: 10, marginTop: 15 }}>
              <div style={{ fontSize: 10, fontWeight: 800, color: axe.color || TEAL, marginBottom: 5 }}>IMPLICATION</div>
-             <div style={{ fontSize: 14, color: "#333" }}>{axe.implication || "Non spécifié."}</div>
+             <div style={{ fontSize: 14 }}>{axe.implication}</div>
           </div>
         </div>
       )}
@@ -79,10 +98,10 @@ const AxeCard = ({ axe }) => {
 // --- Pages ---
 const WelcomeScreen = ({ onExplore, siteData }) => (
   <div style={{ minHeight: "100vh", background: "#071621", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 20px", textAlign: "center" }}>
-    <div style={{ maxWidth: "900px" }}>
-      <div style={{ fontSize: "60px", marginBottom: "20px" }}>{siteData.settings.emoji}</div>
-      <h1 style={{ fontSize: "clamp(40px, 8vw, 80px)", fontWeight: 900, marginBottom: "30px" }}>{siteData.settings.title}</h1>
-      <p style={{ fontSize: "20px", color: "#A0AEC0", marginBottom: "50px" }}>{siteData.settings.subtitle}</p>
+    <div style={{ maxWidth: "800px" }}>
+      <div style={{ fontSize: 70, marginBottom: 20 }}>{siteData.settings.emoji}</div>
+      <h1 style={{ fontSize: "clamp(40px, 8vw, 80px)", fontWeight: 900, marginBottom: 25 }}>{siteData.settings.title}</h1>
+      <p style={{ fontSize: 22, color: "#A0AEC0", marginBottom: 50 }}>{siteData.settings.subtitle}</p>
       <button onClick={onExplore} className="btn-primary" style={{ padding: "18px 45px", fontSize: 18 }}>Explorer le Rapport</button>
     </div>
   </div>
@@ -92,23 +111,21 @@ const LoginPage = ({ onBack }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    if (error) { setError("Accès refusé."); setLoading(false); }
+    if (error) { alert("Accès refusé."); setLoading(false); }
   };
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#071621", padding: "20px" }}>
-      <div style={{ background: "white", padding: "40px", borderRadius: "24px", width: "100%", maxWidth: "400px" }}>
-        <button onClick={onBack} style={{ background: "none", border: "none", color: TEAL, cursor: "pointer", marginBottom: "20px", fontWeight: "800" }}>← RETOUR</button>
-        <h2 style={{ fontSize: 24, marginBottom: 30, color: NAVY }}>Connexion</h2>
+      <div style={{ background: "white", padding: "45px", borderRadius: "24px", width: "100%", maxWidth: "420px" }}>
+        <button onClick={onBack} style={{ background: "none", border: "none", color: TEAL, cursor: "pointer", marginBottom: "25px", fontWeight: "800" }}>← RETOUR</button>
+        <h2 style={{ fontSize: 26, marginBottom: 30, color: NAVY, textAlign: "center" }}>Accès Membre</h2>
         <form onSubmit={handleLogin}>
-          <input className="input-field" style={{ color: "#000", border: "1px solid #ddd" }} type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
-          <input className="input-field" style={{ color: "#000", border: "1px solid #ddd" }} type="password" placeholder="Mot de passe" value={password} onChange={e => setPassword(e.target.value)} required />
-          {error && <div style={{ color: CORAL, fontSize: 13, marginBottom: 15 }}>{error}</div>}
-          <button type="submit" className="btn-primary" style={{ width: "100%" }} disabled={loading}>{loading ? "Vérification..." : "Déverrouiller"}</button>
+          <input className="input-field" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
+          <input className="input-field" type="password" placeholder="Mot de passe" value={password} onChange={e => setPassword(e.target.value)} required />
+          <button type="submit" className="btn-primary" style={{ width: "100%", padding: 15 }} disabled={loading}>{loading ? "Vérification..." : "Déverrouiller"}</button>
         </form>
       </div>
     </div>
@@ -116,51 +133,45 @@ const LoginPage = ({ onBack }) => {
 };
 
 const AdminDashboard = ({ user, onBack, siteData, onUpdateData }) => {
-  const [activeTab, setActiveTab] = useState("content");
   const [saving, setSaving] = useState(false);
-
   const save = async (key, val) => {
     setSaving(true);
-    const { error } = await supabaseClient.from('site_content').upsert({ key, value: val });
-    if (error) alert(error.message);
+    await supabaseClient.from('site_content').upsert({ key, value: val });
     setSaving(false);
   };
-
   return (
     <div style={{ padding: "40px", maxWidth: "1200px", margin: "0 auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 30 }}>
-        <button onClick={onBack} className="btn-primary">← Retour</button>
-        <h2 style={{ fontWeight: 900 }}>Console Admin</h2>
-        <div style={{ fontSize: 12, fontWeight: 700 }}>{user.email}</div>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 40 }}>
+        <button onClick={onBack} className="btn-primary">← Retour au Rapport</button>
+        <h1 style={{ fontWeight: 900 }}>Console Admin</h1>
+        <div style={{ textAlign: "right" }}><div style={{ fontSize: 10, color: SLATE }}>ADMINISTRATEUR</div><div style={{ fontWeight: 700 }}>{user.email}</div></div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 30 }}>
-         <div className="admin-card">
-            <h3>Paramètres Globaux</h3>
-            <div style={{ marginTop: 20 }}>
-               <label>Titre</label>
-               <input className="form-control" id="site-title" defaultValue={siteData.settings.title} />
-               <button className="btn-primary" style={{ width: "100%" }} onClick={() => {
-                  const settings = { ...siteData.settings, title: document.getElementById('site-title').value };
-                  onUpdateData({ ...siteData, settings });
-                  save('settings', settings);
-               }}>Sauvegarder</button>
-            </div>
-         </div>
-         <div className="admin-card">
-            <h3>Contenu (JSON)</h3>
-            <p style={{ fontSize: 12, color: SLATE, marginBottom: 10 }}>Éditez directement les axes ici si besoin.</p>
-            <textarea className="form-control" style={{ height: 300, fontSize: 12 }} id="axes-json" defaultValue={JSON.stringify(siteData.axes, null, 2)} />
-            <button className="btn-primary" onClick={() => {
-               try {
-                 const axes = JSON.parse(document.getElementById('axes-json').value);
-                 onUpdateData({ ...siteData, axes });
-                 save('axes', axes);
-                 alert("Axes mis à jour !");
-               } catch(e) { alert("JSON Invalide"); }
-            }}>Mettre à jour les Axes</button>
-         </div>
+        <div className="admin-card">
+           <h3>Configuration</h3>
+           <div style={{ marginTop: 20 }}>
+             <label style={{ fontSize: 11, fontWeight: 800 }}>TITRE DU SITE</label>
+             <input className="form-control" id="site-title" defaultValue={siteData.settings.title} />
+             <button className="btn-primary" style={{ width: "100%" }} onClick={() => {
+                const settings = { ...siteData.settings, title: document.getElementById('site-title').value };
+                onUpdateData({ ...siteData, settings });
+                save('settings', settings);
+             }}>Enregistrer</button>
+           </div>
+        </div>
+        <div className="admin-card">
+           <h3>Éditeur d'Axes (JSON)</h3>
+           <textarea className="form-control" style={{ height: 400, fontSize: 12, fontFamily: "monospace" }} id="axes-json" defaultValue={JSON.stringify(siteData.axes, null, 2)} />
+           <button className="btn-primary" onClick={() => {
+              try {
+                const axes = JSON.parse(document.getElementById('axes-json').value);
+                onUpdateData({ ...siteData, axes });
+                save('axes', axes);
+                alert("Contenu synchronisé !");
+              } catch(e) { alert("Erreur JSON"); }
+           }}>Synchroniser les Axes</button>
+        </div>
       </div>
-      {saving && <div style={{ position: "fixed", bottom: 20, right: 20, background: TEAL, color: "white", padding: "10px 20px", borderRadius: 30, fontWeight: 800 }}>Enregistrement...</div>}
     </div>
   );
 };
@@ -171,7 +182,7 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   const [showWelcome, setShowWelcome] = useState(true);
   const [isAdminView, setIsAdminView] = useState(false);
-  const [siteData, setSiteData] = useState(defaultData);
+  const [siteData, setSiteData] = useState(STRATEGIC_CONTENT);
   const [section, setSection] = useState("axes");
 
   useEffect(() => {
@@ -181,9 +192,9 @@ const App = () => {
 
     const fetchData = async () => {
       const { data } = await supabaseClient.from('site_content').select('*');
-      if (data) {
-        const update = { ...defaultData };
-        data.forEach(d => { update[d.key] = d.value; });
+      if (data && data.length > 0) {
+        const update = { ...STRATEGIC_CONTENT };
+        data.forEach(d => { if (d.value) update[d.key] = d.value; });
         setSiteData(update);
       }
     };
@@ -191,7 +202,7 @@ const App = () => {
   }, []);
 
   if (showWelcome && !session) return <WelcomeScreen onExplore={() => setShowWelcome(false)} siteData={siteData} />;
-  if (loading) return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900 }}>IA WATCH...</div>;
+  if (loading) return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900 }}>CHARGEMENT IA WATCH...</div>;
   if (!session) return <LoginPage onBack={() => setShowWelcome(true)} />;
   if (isAdminView && session.user.email.includes('admin')) return <AdminDashboard user={session.user} onBack={() => setIsAdminView(false)} siteData={siteData} onUpdateData={setSiteData} />;
 
@@ -199,13 +210,13 @@ const App = () => {
     <div style={{ minHeight: "100vh" }}>
       <header style={{ background: "#fff", borderBottom: `2px solid ${TEAL}`, padding: "15px 30px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, zIndex: 100 }}>
         <div onClick={() => setShowWelcome(true)} style={{ cursor: "pointer" }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: TEAL }}>RAPPORT STRATÉGIQUE</div>
+          <div style={{ fontSize: 10, fontWeight: 800, color: TEAL }}>SOFINCO / MCD</div>
           <div style={{ fontSize: 18, fontWeight: 800 }}>{siteData.settings.title}</div>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           {session.user.email.includes('admin') && <button onClick={() => setIsAdminView(true)} style={{ background: `${TEAL}15`, color: TEAL, border: "none", padding: "8px 15px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 800 }}>ADMIN ⚙️</button>}
-          <button onClick={() => setSection("axes")} style={{ padding: "8px 15px", borderRadius: 8, border: "none", background: section === "axes" ? TEAL : "#eee", color: section === "axes" ? "#fff" : SLATE, fontWeight: 700, cursor: "pointer" }}>AXES</button>
-          <button onClick={() => setSection("perspectives")} style={{ padding: "8px 15px", borderRadius: 8, border: "none", background: section === "perspectives" ? TEAL : "#eee", color: section === "perspectives" ? "#fff" : SLATE, fontWeight: 700, cursor: "pointer" }}>PERSPECTIVES</button>
+          <button onClick={() => setSection("axes")} style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: section === "axes" ? TEAL : "#eee", color: section === "axes" ? "#fff" : SLATE, fontWeight: 700, cursor: "pointer" }}>AXES</button>
+          <button onClick={() => setSection("perspectives")} style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: section === "perspectives" ? TEAL : "#eee", color: section === "perspectives" ? "#fff" : SLATE, fontWeight: 700, cursor: "pointer" }}>PERSPECTIVES</button>
           <button onClick={() => supabaseClient.auth.signOut()} style={{ background: "#333", color: "#fff", border: "none", padding: "8px 15px", borderRadius: 8, cursor: "pointer" }}>SORTIR</button>
         </div>
       </header>
@@ -213,25 +224,26 @@ const App = () => {
       <main style={{ padding: "40px 20px", maxWidth: "1000px", margin: "0 auto" }}>
         {section === "axes" && (
           <div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20, marginBottom: 40 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 20, marginBottom: 40 }}>
               {siteData.kpis.map((k, i) => (
-                <div key={i} style={{ background: "white", padding: 25, borderRadius: 20, boxShadow: "0 5px 15px rgba(0,0,0,0.05)", animation: "fadeInUp 0.5s ease" }}>
-                  <div style={{ fontSize: 24, fontWeight: 900, color: TEAL }}>{k.value}</div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: SLATE }}>{k.label}</div>
+                <div key={i} style={{ background: "white", padding: 30, borderRadius: 20, boxShadow: "0 5px 15px rgba(0,0,0,0.05)", animation: "fadeInUp 0.5s ease" }}>
+                  <div style={{ fontSize: 26, fontWeight: 900, color: TEAL }}>{k.value}</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: SLATE }}>{k.label}</div>
+                  <div style={{ fontSize: 10, color: "#A0AEC0" }}>{k.sub}</div>
                 </div>
               ))}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {siteData.axes && siteData.axes.length > 0 ? siteData.axes.map((axe, i) => <AxeCard key={i} axe={axe} />) : <div style={{ textAlign: "center", padding: 50, color: SLATE }}>Aucun axe thématique trouvé.</div>}
+              {siteData.axes.map((axe, i) => <AxeCard key={i} axe={axe} />)}
             </div>
           </div>
         )}
         {section === "perspectives" && (
            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
              {siteData.perspectives.map((p, i) => (
-               <div key={i} style={{ background: "white", padding: 25, borderRadius: 20, borderLeft: `5px solid ${p.color || TEAL}`, animation: "fadeInUp 0.5s ease" }}>
-                 <div style={{ fontSize: 10, fontWeight: 900, color: p.color || TEAL, marginBottom: 10 }}>{p.type}</div>
-                 <p style={{ fontWeight: 600 }}>{p.text}</p>
+               <div key={i} style={{ background: "white", padding: 30, borderRadius: 20, borderLeft: `5px solid ${p.color || TEAL}`, animation: "fadeInUp 0.5s ease" }}>
+                 <div style={{ fontSize: 10, fontWeight: 900, color: p.color || TEAL, marginBottom: 12 }}>{p.type.toUpperCase()}</div>
+                 <p style={{ fontWeight: 600, lineHeight: 1.5 }}>{p.text}</p>
                </div>
              ))}
            </div>
