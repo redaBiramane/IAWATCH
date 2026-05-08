@@ -12,10 +12,8 @@
   .btn-primary { background: #009597; color: white; padding: 16px 32px; border-radius: 12px; border: none; font-weight: 800; cursor: pointer; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; }
   .btn-primary:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(0,149,151,0.5); }
   .kpi-card { padding: 25px; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; }
-  .kpi-card:hover { background: rgba(255,255,255,0.05); transform: translateY(-5px); border-color: #009597; }
-  @keyframes float { 0% { transform: translateY(0px); } 100% { transform: translateY(-20px); } }
-  @keyframes pulse { 0% { opacity: 0.4; } 100% { opacity: 0.8; } }
   .source-tag { padding: 8px 16px; border-radius: 30px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); font-size: 11px; font-weight: 700; color: #A0AEC0; }
+  @keyframes float { 0% { transform: translateY(0px); } 100% { transform: translateY(-20px); } }
 </style>
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -28,84 +26,86 @@
 const { useState, useEffect } = React;
 
 const TEAL = "#009597";
-const DARK_TEAL = "#006466";
-const SLATE = "#666E8A";
 const NAVY = "#071621";
-const GREEN = "#2D8E57";
-const CORAL = "#F47682";
+const SLATE = "#666E8A";
 
 // --- Supabase ---
 const SUPABASE_URL = "__SUPABASE_URL__"; 
 const SUPABASE_ANON_KEY = "__SUPABASE_ANON_KEY__";
-const supabaseClient = (SUPABASE_URL && SUPABASE_URL !== "__SUPABASE_URL__") 
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
 
-// --- Données par défaut pour éviter le vide ---
+// Initialisation ultra-robuste
+let supabaseClient = null;
+try {
+  if (SUPABASE_URL && SUPABASE_URL.startsWith('http')) {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+} catch(e) { console.error("Erreur init Supabase:", e); }
+
 const defaultData = {
   kpis: [
     { value: "$2 520 Mds", label: "Dépenses IA mondiales 2026" },
-    { value: "+44%", label: "Croissance annuelle investissements" },
-    { value: "17%", label: "Déploiement réel d'agents autonomes" },
-    { value: "28%", label: "Taux de succès ROI actuel" }
+    { value: "+44%", label: "Croissance investissements" },
+    { value: "17%", label: "Déploiement d'agents" },
+    { value: "28%", label: "Taux de succès ROI" }
   ],
-  axes: [
-    { id: 1, icon: "🤖", title: "Agents Autonomes", tag: "TENDANCE 1", color: "#009597", assertion: "Le passage à l'agentique transforme les processus." }
-  ],
-  settings: {
-    title: "IA WATCH",
-    emoji: "📡",
-    subtitle: "Accédez à la synthèse confidentielle des leaders mondiaux de la tech et du conseil."
-  }
+  axes: [],
+  perspectives: [],
+  settings: { title: "IA WATCH", emoji: "📡", subtitle: "Accédez à la synthèse confidentielle des leaders mondiaux." }
 };
 
-// --- Landing Page avec Suspense ---
+// --- Composants UI ---
+const AxeCard = ({ axe }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div onClick={() => setIsOpen(!isOpen)} style={{ background: "#fff", borderRadius: 16, border: `1.5px solid ${isOpen ? axe.color : "#eee"}`, padding: "24px", cursor: "pointer", transition: "0.3s", marginBottom: "15px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+        <div style={{ fontSize: 24, background: `${axe.color || TEAL}15`, padding: 10, borderRadius: 12 }}>{axe.icon || "🤖"}</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 10, fontWeight: 900, color: axe.color || TEAL }}>{axe.tag}</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: NAVY }}>{axe.title}</div>
+        </div>
+      </div>
+      {isOpen && (
+        <div style={{ marginTop: 20, paddingTop: 20, borderTop: "1px solid #eee" }}>
+          {axe.bullets && axe.bullets.map((b, i) => <div key={i} style={{ fontSize: 14, marginBottom: 10, lineHeight: 1.5, color: "#333" }}>• {b}</div>)}
+          <div style={{ background: `${axe.color || TEAL}08`, padding: 15, borderRadius: 10, marginTop: 15 }}>
+             <div style={{ fontSize: 10, fontWeight: 800, color: axe.color || TEAL, marginBottom: 5 }}>IMPLICATION</div>
+             <div style={{ fontSize: 14, color: "#333" }}>{axe.implication}</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- Pages ---
 const WelcomeScreen = ({ onExplore, siteData }) => (
-  <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 20px", textAlign: "center", position: "relative" }}>
-    
-    {/* Effets Visuels */}
-    <div style={{ position: "absolute", top: "20%", left: "10%", width: "300px", height: "300px", background: "radial-gradient(circle, #00959733 0%, transparent 70%)", filter: "blur(50px)", animation: "float 6s infinite alternate" }}></div>
-    <div style={{ position: "absolute", bottom: "10%", right: "5%", width: "400px", height: "400px", background: "radial-gradient(circle, #00959722 0%, transparent 70%)", filter: "blur(60px)", animation: "float 8s infinite alternate-reverse" }}></div>
-
-    <div style={{ position: "relative", zIndex: 10, maxWidth: "1000px" }}>
-      <div style={{ fontSize: "12px", fontWeight: 800, color: TEAL, letterSpacing: "4px", textTransform: "uppercase", marginBottom: "20px", opacity: 0.8 }}>Rapport Stratégique Exclusif</div>
-      
-      <h1 style={{ fontSize: "clamp(40px, 9vw, 90px)", fontWeight: 900, lineHeight: 1, marginBottom: "30px", letterSpacing: "-2px" }}>
-        L'IA en 2026 :<br/><span style={{ color: TEAL }}>Ce que les leaders cachent.</span>
+  <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 20px", textAlign: "center" }}>
+    <div style={{ maxWidth: "900px", position: "relative", zIndex: 10 }}>
+      <div style={{ fontSize: "60px", marginBottom: "20px" }}>{siteData.settings.emoji}</div>
+      <h1 style={{ fontSize: "clamp(40px, 8vw, 80px)", fontWeight: 900, marginBottom: "30px" }}>
+        {siteData.settings.title.split(' ')[0]} <span style={{ color: TEAL }}>{siteData.settings.title.split(' ').slice(1).join(' ')}</span>
       </h1>
-
-      <p style={{ fontSize: "20px", color: "#A0AEC0", maxWidth: "800px", margin: "0 auto 50px", lineHeight: 1.6 }}>
-        {siteData.settings.subtitle || defaultData.settings.subtitle}
-      </p>
-
-      {/* Sources Grid with Suspense */}
+      <p style={{ fontSize: "20px", color: "#A0AEC0", marginBottom: "50px" }}>{siteData.settings.subtitle}</p>
+      
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "10px", marginBottom: "60px" }}>
-        {["McKinsey & Co", "Boston Consulting Group", "Bain & Company", "EY", "Gartner", "HBR", "MIT Review"].map(s => (
-          <div key={s} className="source-tag">{s}</div>
-        ))}
+        {["McKinsey", "BCG", "Bain", "EY", "Gartner", "HBR", "MIT"].map(s => <div key={s} className="source-tag">{s}</div>)}
       </div>
 
-      <button onClick={onExplore} className="btn-primary" style={{ marginBottom: "80px", fontSize: "20px", padding: "20px 60px" }}>
-        Entrer dans le Rapport →
-      </button>
-
-      {/* KPI Preview */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px", width: "100%" }}>
-        {(siteData.kpis.length > 0 ? siteData.kpis : defaultData.kpis).slice(0, 4).map((k, i) => (
+      <button onClick={onExplore} className="btn-primary">Entrer dans le Rapport</button>
+      
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px", marginTop: "80px" }}>
+        {siteData.kpis.slice(0,4).map((k, i) => (
           <div key={i} className="kpi-card">
-            <div style={{ fontSize: "28px", fontWeight: 900, color: TEAL, marginBottom: "5px" }}>{k.value}</div>
-            <div style={{ fontSize: "11px", fontWeight: 700, color: "#CBD5E0", textTransform: "uppercase" }}>{k.label}</div>
+            <div style={{ fontSize: "24px", fontWeight: 900, color: TEAL }}>{k.value}</div>
+            <div style={{ fontSize: "11px", color: "#CBD5E0" }}>{k.label}</div>
           </div>
         ))}
       </div>
     </div>
-
-    {/* Preview Flou en bas */}
-    <div style={{ position: "absolute", bottom: "-100px", left: 0, right: 0, height: "300px", background: "rgba(255,255,255,0.05)", filter: "blur(40px)", transform: "perspective(500px) rotateX(20deg)", pointerEvents: "none" }}></div>
   </div>
 );
 
-// --- Login Page ---
 const LoginPage = ({ onBack }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -115,85 +115,99 @@ const LoginPage = ({ onBack }) => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
-    try {
-      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      // Le re-render sera géré par onAuthStateChange
-    } catch (err) {
-      setError("Email ou mot de passe incorrect.");
-      setLoading(false);
-    }
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error) { setError("Email ou mot de passe incorrect."); setLoading(false); }
   };
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#071621", padding: "20px" }}>
-      <div style={{ background: "#1A202C", padding: "50px", borderRadius: "30px", width: "100%", maxWidth: "450px", boxShadow: "0 30px 60px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}>
-        <button onClick={onBack} style={{ background: "none", border: "none", color: TEAL, cursor: "pointer", marginBottom: "30px", fontWeight: "800", letterSpacing: "1px" }}>← RETOUR</button>
-        <h2 style={{ fontSize: "32px", fontWeight: 900, marginBottom: "40px", textAlign: "center" }}>Accès Restreint</h2>
+      <div className="glass" style={{ padding: "40px", borderRadius: "24px", width: "100%", maxWidth: "400px" }}>
+        <button onClick={onBack} style={{ background: "none", border: "none", color: TEAL, cursor: "pointer", marginBottom: "20px", fontWeight: "800" }}>← RETOUR</button>
+        <h2 style={{ fontSize: 24, marginBottom: 30 }}>Accès Membre</h2>
         <form onSubmit={handleLogin}>
-          <input className="input-field" type="email" placeholder="Votre Email" value={email} onChange={e => setEmail(e.target.value)} required />
+          <input className="input-field" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
           <input className="input-field" type="password" placeholder="Mot de passe" value={password} onChange={e => setPassword(e.target.value)} required />
-          {error && <div style={{ color: CORAL, fontSize: "14px", marginBottom: "20px", textAlign: "center", fontWeight: "600" }}>{error}</div>}
-          <button type="submit" className="btn-primary" style={{ width: "100%" }} disabled={loading}>
-            {loading ? "VÉRIFICATION..." : "DÉVERROUILLER LE RAPPORT"}
-          </button>
+          {error && <div style={{ color: CORAL, fontSize: 13, marginBottom: 15 }}>{error}</div>}
+          <button type="submit" className="btn-primary" style={{ width: "100%" }} disabled={loading}>{loading ? "Vérification..." : "Déverrouiller"}</button>
         </form>
       </div>
     </div>
   );
 };
 
-// --- App Principal ---
+// --- App ---
 const App = () => {
   const [session, setSession] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [showWelcome, setShowWelcome] = useState(true);
   const [siteData, setSiteData] = useState(defaultData);
+  const [section, setSection] = useState("axes");
 
   useEffect(() => {
-    if (!supabaseClient) { setAuthLoading(false); return; }
-    
-    // Auth Listener
-    supabaseClient.auth.getSession().then(({ data: { session } }) => { setSession(session); setAuthLoading(false); });
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_e, s) => {
-      setSession(s);
-      if (s) setShowWelcome(false); // Entrer auto si connecté
-    });
+    if (!supabaseClient) { setLoading(false); return; }
 
-    // Content Fetcher
-    const fetchSite = async () => {
+    // Init Session
+    supabaseClient.auth.getSession().then(({ data: { session } }) => { setSession(session); setLoading(false); });
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_e, s) => setSession(s));
+
+    // Fetch Data
+    const fetchData = async () => {
       const { data } = await supabaseClient.from('site_content').select('*');
-      if (data && data.length > 0) {
-        const newData = { ...siteData };
-        data.forEach(item => { newData[item.key] = item.value; });
-        setSiteData(newData);
+      if (data) {
+        const update = { ...defaultData };
+        data.forEach(d => { update[d.key] = d.value; });
+        setSiteData(update);
       }
     };
-    fetchSite();
+    fetchData();
+
     return () => subscription.unsubscribe();
   }, []);
 
   if (showWelcome && !session) return <WelcomeScreen onExplore={() => setShowWelcome(false)} siteData={siteData} />;
-  if (authLoading) return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", fontWeight: "900", letterSpacing: "5px" }}>IA WATCH...</div>;
+  if (loading) return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900 }}>IA WATCH...</div>;
   if (!session) return <LoginPage onBack={() => setShowWelcome(true)} />;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F5F6F8", color: "#071621" }}>
-      <header style={{ background: "#fff", borderBottom: `2px solid ${TEAL}`, padding: "20px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, zIndex: 100 }}>
-        <div><div style={{ fontSize: 10, fontWeight: 800, color: TEAL }}>CONFIDENTIEL</div><div style={{ fontSize: 18, fontWeight: 900 }}>{siteData.settings.title} 2026</div></div>
-        <button onClick={() => supabaseClient.auth.signOut()} style={{ background: "#eee", border: "none", padding: "10px 20px", borderRadius: 10, cursor: "pointer", fontWeight: 700 }}>SORTIR</button>
+    <div style={{ minHeight: "100vh", background: "#F5F6F8", color: NAVY }}>
+      <header style={{ background: "#fff", borderBottom: `2px solid ${TEAL}`, padding: "15px 30px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, zIndex: 100 }}>
+        <div onClick={() => setShowWelcome(true)} style={{ cursor: "pointer" }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: TEAL }}>RAPPORT STRATÉGIQUE</div>
+          <div style={{ fontSize: 18, fontWeight: 800 }}>{siteData.settings.title}</div>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={() => setSection("axes")} style={{ padding: "8px 15px", borderRadius: 8, border: "none", background: section === "axes" ? TEAL : "#eee", color: section === "axes" ? "#fff" : SLATE, fontWeight: 700, cursor: "pointer" }}>AXES</button>
+          <button onClick={() => setSection("perspectives")} style={{ padding: "8px 15px", borderRadius: 8, border: "none", background: section === "perspectives" ? TEAL : "#eee", color: section === "perspectives" ? "#fff" : SLATE, fontWeight: 700, cursor: "pointer" }}>PERSPECTIVES</button>
+          <button onClick={() => supabaseClient.auth.signOut()} style={{ background: "#333", color: "#fff", border: "none", padding: "8px 15px", borderRadius: 8, cursor: "pointer" }}>SORTIR</button>
+        </div>
       </header>
-      <main style={{ padding: "40px", maxWidth: "1200px", margin: "0 auto" }}>
-         <h1 style={{ fontSize: "40px", fontWeight: 900, marginBottom: "30px" }}>Synthèse Stratégique</h1>
-         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px" }}>
-           {siteData.kpis.map((k, i) => (
-             <div key={i} style={{ background: "white", padding: "30px", borderRadius: "20px", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
-               <div style={{ fontSize: "32px", fontWeight: 900, color: TEAL }}>{k.value}</div>
-               <div style={{ fontSize: "12px", fontWeight: 700, color: SLATE }}>{k.label}</div>
-             </div>
-           ))}
-         </div>
+
+      <main style={{ padding: "40px 20px", maxWidth: "1000px", margin: "0 auto" }}>
+        {section === "axes" && (
+          <div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20, marginBottom: 40 }}>
+              {siteData.kpis.map((k, i) => (
+                <div key={i} style={{ background: "white", padding: 25, borderRadius: 20, boxShadow: "0 5px 15px rgba(0,0,0,0.05)" }}>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: TEAL }}>{k.value}</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: SLATE }}>{k.label}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {siteData.axes.map((axe, i) => <AxeCard key={i} axe={axe} />)}
+            </div>
+          </div>
+        )}
+        {section === "perspectives" && (
+           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+             {siteData.perspectives.map((p, i) => (
+               <div key={i} style={{ background: "white", padding: 25, borderRadius: 20, borderLeft: `5px solid ${p.color || TEAL}` }}>
+                 <div style={{ fontSize: 10, fontWeight: 900, color: p.color || TEAL, marginBottom: 10 }}>{p.type}</div>
+                 <p style={{ fontWeight: 600 }}>{p.text}</p>
+               </div>
+             ))}
+           </div>
+        )}
       </main>
     </div>
   );
