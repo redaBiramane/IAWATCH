@@ -958,127 +958,184 @@ function App() {
     />;
   }
 
-  if (showWelcome) {
-    return (
+  const WelcomeScreen = ({ onExplore, onLogin, siteData }) => {
+  return (
+    <div style={{
+      minHeight: "100vh",
+      width: "100%",
+      background: "#071621",
+      color: "#fff",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "40px 20px",
+      position: "relative",
+      overflow: "hidden",
+    }}>
+      {/* Background Animations */}
       <div style={{
-        minHeight: "100vh",
-        background: "#fff",
-        fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
-        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-        padding: "40px 20px",
-      }}>
-        {/* Top bar with logout */}
-        <div style={{ position: "absolute", top: 20, right: 20, display: "flex", gap: "20px", alignItems: "center" }}>
-          {session?.user?.email?.includes('admin') && (
-            <button 
-              onClick={() => setIsAdminView(true)} 
-              style={{ background: "#00959715", border: "1px solid #00959730", color: TEAL, padding: "6px 12px", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "700" }}
-            >
-              Console Admin ⚙️
-            </button>
-          )}
-          {session && (
-            <button onClick={handleLogout} style={{ background: "none", border: "none", color: SLATE, cursor: "pointer", fontSize: "12px", fontWeight: "600" }}>
-              Déconnexion
-            </button>
-          )}
-        </div>
+        position: "absolute", top: "-10%", left: "-10%", width: "40%", height: "40%",
+        background: "radial-gradient(circle, rgba(0,149,151,0.15) 0%, rgba(0,0,0,0) 70%)",
+        animation: "float 15s infinite alternate",
+      }}></div>
+      <div style={{
+        position: "absolute", bottom: "-10%", right: "-10%", width: "50%", height: "50%",
+        background: "radial-gradient(circle, rgba(0,149,151,0.1) 0%, rgba(0,0,0,0) 70%)",
+        animation: "float 20s infinite alternate-reverse",
+      }}></div>
 
-        {/* Title block */}
-        <div style={{ textAlign: "center", maxWidth: 600, marginBottom: 12 }}>
-          <div style={{
-            fontSize: 42, marginBottom: 8,
+      <div style={{ position: "relative", zIndex: 1, textAlign: "center", maxWidth: "1000px", width: "100%" }}>
+        
+        {/* Header / Logo Section */}
+        <div style={{ animation: "fadeInUp 0.8s ease-out" }}>
+          <div style={{ fontSize: "60px", marginBottom: "20px" }}>{siteData.settings.emoji}</div>
+          <h1 style={{ 
+            fontSize: "clamp(40px, 8vw, 72px)", 
+            fontWeight: "900", 
+            letterSpacing: "-0.02em",
+            lineHeight: 1.1,
+            marginBottom: "20px"
           }}>
-            {siteData.settings.emoji}
-          </div>
-          <div style={{
-            fontSize: 32, fontWeight: 800, letterSpacing: "0.12em",
-            textTransform: "uppercase", marginBottom: 14,
+            <span style={{ color: TEAL }}>{siteData.settings.title.split(' ')[0]}</span> {siteData.settings.title.split(' ').slice(1).join(' ')}
+          </h1>
+          <p style={{ 
+            fontSize: "clamp(18px, 4vw, 24px)", 
+            color: "#A0AEC0", 
+            maxWidth: "700px", 
+            margin: "0 auto 40px",
+            lineHeight: 1.5,
+            fontWeight: "500"
           }}>
-            <span style={{ color: TEAL }}>{siteData.settings.title.slice(0, 2)}</span><span style={{ color: NAVY }}>{siteData.settings.title.slice(2)}</span>
-          </div>
-          <div style={{
-            fontSize: 20, fontWeight: 600, color: SLATE, lineHeight: 1.35,
-          }}>
-            Impact de l'<span style={{ color: TEAL }}>IA</span> sur l'économie,<br/>les entreprises et l'emploi
-          </div>
+            {siteData.settings.subtitle}
+          </p>
         </div>
 
-        {/* Teal bar */}
-        <div style={{ width: 50, height: 3, background: TEAL, borderRadius: 2, margin: "16px 0 20px" }} />
-
-        {/* Date */}
-        <div style={{
-          fontSize: 14, color: SLATE, fontWeight: 600, marginBottom: 6,
-          display: "flex", alignItems: "center", gap: 8,
+        {/* Action Buttons */}
+        <div style={{ 
+          display: "flex", 
+          gap: "20px", 
+          justifyContent: "center", 
+          marginBottom: "80px",
+          animation: "fadeInUp 1s ease-out 0.2s both"
         }}>
-          <span style={{
-            display: "inline-block", width: 8, height: 8, borderRadius: "50%",
-            background: TEAL, opacity: 0.5,
-          }} />
-          Janvier — Mai 2026
-        </div>
-        <div style={{
-          fontSize: 14, color: SLATE, fontWeight: 600, marginBottom: 32,
-        }}>
-          Sofinco / MCD
-        </div>
-
-        {/* Subtitle */}
-        <div style={{
-          fontSize: 12, color: "#8E93A8", textAlign: "center", marginBottom: 20,
-          letterSpacing: "0.04em", textTransform: "uppercase", fontWeight: 600,
-        }}>
-          Synthèse de 50 publications issues de
-        </div>
-
-        {/* Source logos - two rows, gray */}
-        <div style={{
-          display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8,
-          maxWidth: 560, marginBottom: 10,
-        }}>
-          {sourceBrands.slice(0, 5).map((s, i) => (
-            <div key={i} style={{
-              padding: "6px 14px", borderRadius: 6,
-              background: "#F0F0F2", border: "1px solid #E0E0E4",
-            }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#555" }}>{s.name}</span>
-            </div>
-          ))}
-        </div>
-        <div style={{
-          display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8,
-          maxWidth: 560, marginBottom: 40,
-        }}>
-          {sourceBrands.slice(5).map((s, i) => (
-            <div key={i} style={{
-              padding: "6px 14px", borderRadius: 6,
-              background: "#F0F0F2", border: "1px solid #E0E0E4",
-            }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#555" }}>{s.name}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* CTA */}
-        <div style={{ display: "flex", gap: "16px" }}>
-          <button
-            onClick={() => setShowWelcome(false)}
-            style={{
-              padding: "14px 44px", borderRadius: 10,
-              border: "none", background: TEAL, color: "#fff",
-              fontSize: 15, fontWeight: 700, cursor: "pointer",
-              letterSpacing: "0.04em",
-              boxShadow: `0 4px 20px ${TEAL}40`,
-              transition: "all 0.25s ease",
-            }}
-          >
-            Explorer le rapport →
+          <button onClick={onExplore} className="landing-btn-primary">
+            Explorer le Rapport
+          </button>
+          <button onClick={onLogin} className="landing-btn-secondary">
+            Accès Membre
           </button>
         </div>
 
-        {/* Footer */}
+        {/* KPI Grid */}
+        <div style={{ 
+          display: "grid", 
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", 
+          gap: "20px", 
+          marginBottom: "80px",
+          animation: "fadeInUp 1.2s ease-out 0.4s both"
+        }}>
+          {siteData.kpis.slice(0, 4).map((k, i) => (
+            <div key={i} className="landing-kpi-card">
+              <div style={{ fontSize: "28px", fontWeight: "800", color: TEAL, marginBottom: "8px" }}>{k.value}</div>
+              <div style={{ fontSize: "13px", color: "#CBD5E0", fontWeight: "600", lineHeight: 1.3 }}>{k.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Sources Section */}
+        <div style={{ animation: "fadeInUp 1.4s ease-out 0.6s both" }}>
+          <div style={{ fontSize: "11px", color: "#718096", textTransform: "uppercase", fontWeight: "700", letterSpacing: "0.2em", marginBottom: "25px" }}>
+            SYNTHÈSE DE 50+ PUBLICATIONS ISSUES DE
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "12px" }}>
+            {["McKinsey", "BCG", "Bain", "Accenture", "Gartner", "MIT Sloan", "Wharton", "HBR"].map(s => (
+              <span key={s} style={{ 
+                padding: "8px 16px", 
+                borderRadius: "30px", 
+                background: "rgba(255,255,255,0.05)", 
+                border: "1px solid rgba(255,255,255,0.1)",
+                fontSize: "12px",
+                fontWeight: "600",
+                color: "#A0AEC0"
+              }}>
+                {s}
+              </span>
+            ))}
+          </div>
+        </div>
+
       </div>
+
+      <style>{`
+        @keyframes float {
+          0% { transform: translate(0, 0); }
+          100% { transform: translate(30px, 30px); }
+        }
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .landing-btn-primary {
+          padding: 16px 40px;
+          border-radius: 12px;
+          border: none;
+          background: ${TEAL};
+          color: white;
+          font-size: 16px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 0 20px ${TEAL}60;
+        }
+        .landing-btn-primary:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 0 30px ${TEAL}90;
+        }
+        .landing-btn-secondary {
+          padding: 16px 40px;
+          border-radius: 12px;
+          border: 1px solid rgba(255,255,255,0.2);
+          background: rgba(255,255,255,0.05);
+          color: white;
+          font-size: 16px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        .landing-btn-secondary:hover {
+          background: rgba(255,255,255,0.1);
+          border-color: rgba(255,255,255,0.4);
+        }
+        .landing-kpi-card {
+          padding: 24px;
+          background: rgba(255,255,255,0.03);
+          border-radius: 16px;
+          border: 1px solid rgba(255,255,255,0.05);
+          backdrop-filter: blur(10px);
+          transition: all 0.3s ease;
+        }
+        .landing-kpi-card:hover {
+          transform: translateY(-5px);
+          background: rgba(255,255,255,0.06);
+          border-color: ${TEAL}40;
+        }
+      `}</style>
+    </div>
+  );
+};
+
+  if (showWelcome) {
+    return (
+      <WelcomeScreen 
+        onExplore={() => setShowWelcome(false)} 
+        onLogin={() => {
+          // If already logged in, just explore, otherwise we'll stay here for login
+          if (session) setShowWelcome(false);
+          else setShowWelcome(false); // Auth is handled by the wrapper, so we just enter
+        }}
+        siteData={siteData}
+      />
     );
   }
 
