@@ -212,27 +212,43 @@ const Login = ({ onLogin }) => {
 };
 
 const AdminDashboard = ({ user, onBack, siteData, onUpdateData }) => {
-  const [activeTab, setActiveTab] = useState("users");
+  const [activeTab, setActiveTab] = useState("stats");
   const [users, setUsers] = useState([]);
-  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [stats, setStats] = useState({ totalUsers: 0, newToday: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (activeTab === "users") {
-      fetchUsers();
-    }
+    fetchData();
   }, [activeTab]);
 
-  const fetchUsers = async () => {
+  const fetchData = async () => {
     if (!supabaseClient) return;
-    setLoadingUsers(true);
+    setLoading(true);
+    setError(null);
     try {
-      const { data, error } = await supabaseClient.from('profiles').select('*').order('created_at', { ascending: false });
-      if (!error) setUsers(data);
+      // Fetch Users
+      const { data: userData, error: userError } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (userError) throw userError;
+      setUsers(userData || []);
+
+      // Calculate Stats
+      const today = new Date().toISOString().split('T')[0];
+      setStats({
+        totalUsers: userData?.length || 0,
+        newToday: userData?.filter(u => u.created_at.startsWith(today)).length || 0
+      });
+
     } catch (err) {
-      console.error(err);
+      console.error("Erreur Admin:", err);
+      setError(err.message);
     } finally {
-      setLoadingUsers(false);
+      setLoading(false);
     }
   };
 
@@ -240,25 +256,9 @@ const AdminDashboard = ({ user, onBack, siteData, onUpdateData }) => {
     setSaving(true);
     const updatedKPIs = [...siteData.kpis];
     updatedKPIs[index] = newData;
-    
-    // In a real scenario, we'd update Supabase here
-    // For now, we update local state which would be persisted if DB was set up
     onUpdateData({ ...siteData, kpis: updatedKPIs });
-    
     if (supabaseClient) {
       await supabaseClient.from('site_content').upsert({ key: 'kpis', value: updatedKPIs });
-    }
-    setSaving(false);
-  };
-
-  const handleSaveAxe = async (index, newData) => {
-    setSaving(true);
-    const updatedAxes = [...siteData.axes];
-    updatedAxes[index] = { ...updatedAxes[index], ...newData };
-    onUpdateData({ ...siteData, axes: updatedAxes });
-    
-    if (supabaseClient) {
-      await supabaseClient.from('site_content').upsert({ key: 'axes', value: updatedAxes });
     }
     setSaving(false);
   };
@@ -272,121 +272,114 @@ const AdminDashboard = ({ user, onBack, siteData, onUpdateData }) => {
           </button>
           <h2 style={{ fontSize: "32px", fontWeight: "800", color: "#071621" }}>Console d'Administration</h2>
         </div>
-        <div style={{ textAlign: "right" }}>
-          <span style={{ fontSize: "12px", color: SLATE }}>Connecté en tant que</span>
+        <div className="glass" style={{ padding: "10px 20px", borderRadius: "12px", textAlign: "right" }}>
+          <span style={{ fontSize: "11px", color: SLATE, textTransform: "uppercase", fontWeight: "700" }}>Administrateur</span>
           <div style={{ fontWeight: "700", color: NAVY }}>{user?.email}</div>
         </div>
       </div>
 
       <div className="admin-tabs">
-        <button className={`admin-tab-btn ${activeTab === "users" ? "active" : ""}`} onClick={() => setActiveTab("users")}>Utilisateurs</button>
-        <button className={`admin-tab-btn ${activeTab === "kpis" ? "active" : ""}`} onClick={() => setActiveTab("kpis")}>KPIs (Chiffres Clés)</button>
-        <button className={`admin-tab-btn ${activeTab === "axes" ? "active" : ""}`} onClick={() => setActiveTab("axes")}>Axes Thématiques</button>
-        <button className={`admin-tab-btn ${activeTab === "settings" ? "active" : ""}`} onClick={() => setActiveTab("settings")}>Configuration</button>
+        <button className={`admin-tab-btn ${activeTab === "stats" ? "active" : ""}`} onClick={() => setActiveTab("stats")}>📈 Statistiques</button>
+        <button className={`admin-tab-btn ${activeTab === "users" ? "active" : ""}`} onClick={() => setActiveTab("users")}>👥 Utilisateurs</button>
+        <button className={`admin-tab-btn ${activeTab === "content" ? "active" : ""}`} onClick={() => setActiveTab("content")}>📝 Gestion du Contenu</button>
+        <button className={`admin-tab-btn ${activeTab === "config" ? "active" : ""}`} onClick={() => setActiveTab("config")}>⚙️ Configuration</button>
       </div>
+
+      {error && (
+        <div style={{ padding: "15px", background: "#fee2e2", color: "#b91c1c", borderRadius: "8px", marginBottom: "20px", fontSize: "14px", fontWeight: "600" }}>
+          ⚠️ Erreur Supabase : {error}
+          <div style={{ fontSize: "12px", marginTop: "5px", fontWeight: "400" }}>Vérifiez vos politiques RLS et si votre utilisateur est bien admin.</div>
+        </div>
+      )}
+
+      {activeTab === "stats" && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "20px" }}>
+          <div className="admin-card" style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "40px", marginBottom: "10px" }}>👥</div>
+            <div style={{ fontSize: "14px", color: SLATE, fontWeight: "600" }}>Total Utilisateurs</div>
+            <div style={{ fontSize: "32px", fontWeight: "800", color: NAVY }}>{stats.totalUsers}</div>
+          </div>
+          <div className="admin-card" style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "40px", marginBottom: "10px" }}>✨</div>
+            <div style={{ fontSize: "14px", color: SLATE, fontWeight: "600" }}>Inscriptions aujourd'hui</div>
+            <div style={{ fontSize: "32px", fontWeight: "800", color: "#009597" }}>{stats.newToday}</div>
+          </div>
+          <div className="admin-card" style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "40px", marginBottom: "10px" }}>🛰️</div>
+            <div style={{ fontSize: "14px", color: SLATE, fontWeight: "600" }}>Statut Serveur</div>
+            <div style={{ fontSize: "18px", fontWeight: "800", color: "#10b981", marginTop: "10px" }}>Opérationnel</div>
+          </div>
+        </div>
+      )}
 
       {activeTab === "users" && (
         <div className="glass" style={{ padding: "32px", borderRadius: "16px" }}>
-          <h3 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px" }}>Gestion des Utilisateurs</h3>
-          {loadingUsers ? (
-            <p>Chargement...</p>
-          ) : (
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Email</th>
-                  <th>Date d'inscription</th>
-                  <th>Rôle</th>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+            <h3 style={{ fontSize: "20px", fontWeight: "700" }}>Utilisateurs inscrits</h3>
+            <button onClick={fetchData} style={{ background: "none", border: "none", color: TEAL, fontWeight: "600", cursor: "pointer" }}>Actualiser ↻</button>
+          </div>
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Date d'inscription</th>
+                <th>Rôle</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((u, i) => (
+                <tr key={i}>
+                  <td style={{ fontWeight: "600" }}>{u.email}</td>
+                  <td>{new Date(u.created_at).toLocaleDateString()}</td>
+                  <td>
+                    <span style={{ padding: "4px 10px", borderRadius: "10px", background: u.is_admin ? "#00959720" : "#eee", color: u.is_admin ? "#009597" : "#666", fontSize: "11px", fontWeight: "700" }}>
+                      {u.is_admin ? "ADMIN" : "USER"}
+                    </span>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {users.map((u, i) => (
-                  <tr key={i}>
-                    <td style={{ fontWeight: "600" }}>{u.email}</td>
-                    <td>{new Date(u.created_at).toLocaleDateString()}</td>
-                    <td><span style={{ padding: "4px 10px", borderRadius: "10px", background: u.is_admin ? "#00959720" : "#eee", color: u.is_admin ? "#009597" : "#666", fontSize: "11px", fontWeight: "700" }}>{u.is_admin ? "ADMIN" : "USER"}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+              ))}
+              {users.length === 0 && !loading && (
+                <tr><td colSpan="3" style={{ textAlign: "center", padding: "40px", color: SLATE }}>Aucun utilisateur trouvé.</td></tr>
+              )}
+            </tbody>
+          </table>
         </div>
       )}
 
-      {activeTab === "kpis" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))", gap: "20px" }}>
-          {siteData.kpis.map((k, i) => (
-            <div key={i} className="admin-card">
-              <h4 style={{ marginBottom: "15px", color: TEAL }}>KPI #{i + 1}</h4>
-              <div className="form-group">
-                <label>Valeur</label>
-                <input className="form-control" defaultValue={k.value} onBlur={(e) => handleSaveKPI(i, { ...k, value: e.target.value })} />
-              </div>
-              <div className="form-group">
-                <label>Libellé</label>
-                <input className="form-control" defaultValue={k.label} onBlur={(e) => handleSaveKPI(i, { ...k, label: e.target.value })} />
-              </div>
-              <div className="form-group">
-                <label>Sous-texte</label>
-                <input className="form-control" defaultValue={k.sub} onBlur={(e) => handleSaveKPI(i, { ...k, sub: e.target.value })} />
-              </div>
-              <div className="form-group">
-                <label>Source</label>
-                <input className="form-control" defaultValue={k.source} onBlur={(e) => handleSaveKPI(i, { ...k, source: e.target.value })} />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {activeTab === "axes" && (
+      {activeTab === "content" && (
         <div>
-          {siteData.axes.map((axe, i) => (
-            <div key={i} className="admin-card" style={{ borderLeft: `6px solid ${axe.color}` }}>
-              <h4 style={{ marginBottom: "15px", color: axe.color }}>{axe.tag} : {axe.title}</h4>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+          <h3 style={{ marginBottom: "20px" }}>Modifier les KPI du rapport (Landing Page)</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))", gap: "20px", marginBottom: "40px" }}>
+            {siteData.kpis.map((k, i) => (
+              <div key={i} className="admin-card">
                 <div className="form-group">
-                  <label>Titre de l'axe</label>
-                  <input className="form-control" defaultValue={axe.title} onBlur={(e) => handleSaveAxe(i, { title: e.target.value })} />
+                  <label>Valeur (ex: 28%)</label>
+                  <input className="form-control" defaultValue={k.value} onBlur={(e) => handleSaveKPI(i, { ...k, value: e.target.value })} />
                 </div>
                 <div className="form-group">
-                  <label>Icône (Emoji)</label>
-                  <input className="form-control" defaultValue={axe.icon} onBlur={(e) => handleSaveAxe(i, { icon: e.target.value })} />
+                  <label>Description</label>
+                  <input className="form-control" defaultValue={k.label} onBlur={(e) => handleSaveKPI(i, { ...k, label: e.target.value })} />
                 </div>
               </div>
-              <div className="form-group">
-                <label>Assertion (Phrase clé)</label>
-                <textarea className="form-control" rows="2" defaultValue={axe.assertion} onBlur={(e) => handleSaveAxe(i, { assertion: e.target.value })} />
-              </div>
-              <div className="form-group">
-                <label>Implication Sofinco</label>
-                <textarea className="form-control" rows="3" defaultValue={axe.implication} onBlur={(e) => handleSaveAxe(i, { implication: e.target.value })} />
-              </div>
-              <div style={{ fontSize: "11px", color: SLATE }}>Les modifications sont enregistrées automatiquement lors de la perte de focus (onBlur).</div>
-            </div>
-          ))}
+            ))}
+          </div>
+          {/* Les axes thématiques peuvent être ajoutés ici de la même manière */}
         </div>
       )}
 
-      {activeTab === "settings" && (
+      {activeTab === "config" && (
         <div className="glass" style={{ padding: "32px", borderRadius: "16px" }}>
-          <h3 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px" }}>Paramètres du Site</h3>
-          <p style={{ fontSize: "14px", color: SLATE, marginBottom: "20px" }}>
-            Pour rendre ces modifications persistantes après un rafraîchissement, assurez-vous d'avoir créé la table <code>site_content</code> dans Supabase.
-          </p>
-          <pre style={{ background: "#f8f9fa", padding: "15px", borderRadius: "8px", fontSize: "12px", overflowX: "auto" }}>
-{`create table public.site_content (
-  key text primary key,
-  value jsonb,
-  updated_at timestamp with time zone default now()
-);`}
+          <h3 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "20px" }}>Paramètres de la base de données</h3>
+          <p style={{ fontSize: "14px", color: SLATE, marginBottom: "20px" }}>Table utilisée pour le contenu : <code>site_content</code></p>
+          <pre style={{ background: "#f8f9fa", padding: "15px", borderRadius: "8px", fontSize: "12px" }}>
+            {`SELECT * FROM public.profiles; -- Vérifier les utilisateurs`}
           </pre>
         </div>
       )}
 
       {saving && (
         <div style={{ position: "fixed", bottom: "20px", right: "20px", background: NAVY, color: "white", padding: "10px 20px", borderRadius: "30px", fontSize: "12px", fontWeight: "700", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
-          Synchronisation en cours...
+          Synchronisation...
         </div>
       )}
     </div>
