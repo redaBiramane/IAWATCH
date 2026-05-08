@@ -213,6 +213,7 @@ const Login = ({ onLogin }) => {
 
 const AdminDashboard = ({ user, onBack, siteData, onUpdateData }) => {
   const [activeTab, setActiveTab] = useState("stats");
+  const [subTab, setSubTab] = useState("kpis");
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState({ totalUsers: 0, newToday: 0 });
   const [loading, setLoading] = useState(true);
@@ -369,128 +370,135 @@ const AdminDashboard = ({ user, onBack, siteData, onUpdateData }) => {
         </div>
       )}
 
+      {activeTab === "stats" && (
+        <div style={{ animation: "fadeIn 0.3s ease" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "25px" }}>
+            <div className="admin-card" style={{ borderTop: `4px solid ${TEAL}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ fontSize: "14px", color: SLATE, fontWeight: "600" }}>Total Utilisateurs</div>
+                <div style={{ fontSize: "24px" }}>👥</div>
+              </div>
+              <div style={{ fontSize: "36px", fontWeight: "800", color: NAVY, margin: "10px 0" }}>{stats.totalUsers}</div>
+              <div style={{ fontSize: "12px", color: GREEN, fontWeight: "600" }}>↑ Actifs sur le site</div>
+            </div>
+            <div className="admin-card" style={{ borderTop: `4px solid ${ORANGE}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ fontSize: "14px", color: SLATE, fontWeight: "600" }}>Nouveaux (24h)</div>
+                <div style={{ fontSize: "24px" }}>✨</div>
+              </div>
+              <div style={{ fontSize: "36px", fontWeight: "800", color: NAVY, margin: "10px 0" }}>{stats.newToday}</div>
+              <div style={{ fontSize: "12px", color: SLATE }}>Inscriptions récentes</div>
+            </div>
+            <div className="admin-card" style={{ borderTop: `4px solid ${BLUE}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ fontSize: "14px", color: SLATE, fontWeight: "600" }}>Rapport IA Watch</div>
+                <div style={{ fontSize: "24px" }}>📊</div>
+              </div>
+              <div style={{ fontSize: "36px", fontWeight: "800", color: NAVY, margin: "10px 0" }}>{siteData.axes.length}</div>
+              <div style={{ fontSize: "12px", color: SLATE }}>Axes thématiques actifs</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {activeTab === "content" && (
         <div style={{ animation: "fadeIn 0.3s ease" }}>
-          {/* SECTION KPIs */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", marginTop: "20px" }}>
-            <h3 style={{ fontSize: "22px", fontWeight: "700" }}>📊 Chiffres Clés (KPIs)</h3>
-            <button 
-              onClick={() => {
-                const newKPIs = [...siteData.kpis, { value: "0", label: "Nouveau KPI", sub: "", source: "" }];
-                onUpdateData({ ...siteData, kpis: newKPIs });
-              }}
-              className="btn-primary" style={{ padding: "8px 16px", fontSize: "13px" }}
-            >
-              + Ajouter un KPI
-            </button>
-          </div>
-          
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))", gap: "20px", marginBottom: "40px" }}>
-            {siteData.kpis.map((k, i) => (
-              <div key={i} className="admin-card" style={{ position: "relative" }}>
-                <div className="form-group">
-                  <label>Valeur</label>
-                  <input className="form-control" id={`kpi-val-${i}`} defaultValue={k.value} />
-                </div>
-                <div className="form-group">
-                  <label>Description</label>
-                  <input className="form-control" id={`kpi-lab-${i}`} defaultValue={k.label} />
-                </div>
-                <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-                  <button 
-                    onClick={async () => {
-                      const val = document.getElementById(`kpi-val-${i}`).value;
-                      const lab = document.getElementById(`kpi-lab-${i}`).value;
-                      handleSaveKPI(i, { ...k, value: val, label: lab });
-                    }}
-                    style={{ flex: 1, padding: "8px", borderRadius: "6px", border: "none", background: TEAL, color: "white", fontWeight: "600", cursor: "pointer" }}
-                  >
-                    Enregistrer
-                  </button>
-                  <button 
-                    onClick={() => {
-                      if(confirm("Supprimer ce KPI ?")) {
-                        const newKPIs = siteData.kpis.filter((_, idx) => idx !== i);
-                        onUpdateData({ ...siteData, kpis: newKPIs });
-                        handleSaveKPI(null, null, newKPIs); // Helper will handle bulk update
-                      }
-                    }}
-                    style={{ padding: "8px", borderRadius: "6px", border: "1px solid #fee2e2", background: "#fff", color: "#ef4444", cursor: "pointer" }}
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </div>
+          <div style={{ background: "#f8f9fa", padding: "15px", borderRadius: "10px", marginBottom: "30px", display: "flex", gap: "10px" }}>
+            {["kpis", "axes", "perspectives", "sources"].map(t => (
+              <button 
+                key={t}
+                onClick={() => setSubTab(t)}
+                style={{
+                  padding: "8px 16px", borderRadius: "6px", border: "none",
+                  background: subTab === t ? "white" : "transparent",
+                  boxShadow: subTab === t ? "0 2px 4px rgba(0,0,0,0.05)" : "none",
+                  color: subTab === t ? TEAL : SLATE,
+                  fontWeight: "700", cursor: "pointer", fontSize: "13px", textTransform: "uppercase"
+                }}
+              >
+                {t}
+              </button>
             ))}
           </div>
 
-          {/* SECTION AXES */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", borderTop: "1px solid #eee", paddingTop: "40px" }}>
-            <h3 style={{ fontSize: "22px", fontWeight: "700" }}>🧠 Axes Thématiques</h3>
-            <button 
-              onClick={() => {
-                const newAxes = [...siteData.axes, { id: Date.now(), tag: "NOUVEAU", title: "Titre", icon: "✨", color: TEAL, assertion: "", bullets: [], implication: "", sources: "" }];
-                onUpdateData({ ...siteData, axes: newAxes });
-              }}
-              className="btn-primary" style={{ padding: "8px 16px", fontSize: "13px" }}
-            >
-              + Ajouter un Axe
-            </button>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            {siteData.axes.map((axe, i) => (
-              <div key={i} className="admin-card" style={{ borderLeft: `6px solid ${axe.color}` }}>
-                <div style={{ display: "grid", gridTemplateColumns: "80px 1fr 150px", gap: "15px", marginBottom: "15px" }}>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>Icône</label>
-                    <input className="form-control" id={`axe-ico-${i}`} defaultValue={axe.icon} />
-                  </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>Titre</label>
-                    <input className="form-control" id={`axe-tit-${i}`} defaultValue={axe.title} />
-                  </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>Tag</label>
-                    <input className="form-control" id={`axe-tag-${i}`} defaultValue={axe.tag} />
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label>Assertion</label>
-                  <textarea className="form-control" id={`axe-ass-${i}`} defaultValue={axe.assertion} rows="2" />
-                </div>
-                <div style={{ display: "flex", gap: "10px" }}>
-                  <button 
-                    onClick={() => {
-                      const newData = {
-                        ...axe,
-                        icon: document.getElementById(`axe-ico-${i}`).value,
-                        title: document.getElementById(`axe-tit-${i}`).value,
-                        tag: document.getElementById(`axe-tag-${i}`).value,
-                        assertion: document.getElementById(`axe-ass-${i}`).value,
-                      };
-                      handleSaveAxe(i, newData);
-                    }}
-                    style={{ background: TEAL, color: "white", padding: "10px 20px", borderRadius: "8px", border: "none", fontWeight: "700", cursor: "pointer" }}
-                  >
-                    Enregistrer les modifications
-                  </button>
-                  <button 
-                    onClick={() => {
-                      if(confirm("Voulez-vous vraiment supprimer cet axe thématique ?")) {
-                        const newAxes = siteData.axes.filter((_, idx) => idx !== i);
-                        onUpdateData({ ...siteData, axes: newAxes });
-                        handleSaveAxe(null, null, newAxes);
-                      }
-                    }}
-                    style={{ background: "white", color: "#ef4444", padding: "10px", borderRadius: "8px", border: "1px solid #ef4444", cursor: "pointer" }}
-                  >
-                    Supprimer l'axe
-                  </button>
-                </div>
+          {subTab === "kpis" && (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                <h3 style={{ fontSize: "18px", fontWeight: "700" }}>Gestion des Chiffres Clés (KPIs)</h3>
+                <button onClick={() => {
+                  const newKPIs = [...siteData.kpis, { value: "0", label: "Nouveau", sub: "", source: "" }];
+                  handleSaveKPI(null, null, newKPIs);
+                }} className="btn-primary">+ Ajouter</button>
               </div>
-            ))}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "20px" }}>
+                {siteData.kpis.map((k, i) => (
+                  <div key={i} className="admin-card">
+                    <div className="form-group"><label>Valeur</label><input className="form-control" id={`kpi-v-${i}`} defaultValue={k.value} /></div>
+                    <div className="form-group"><label>Label</label><input className="form-control" id={`kpi-l-${i}`} defaultValue={k.label} /></div>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <button onClick={() => handleSaveKPI(i, { ...k, value: document.getElementById(`kpi-v-${i}`).value, label: document.getElementById(`kpi-l-${i}`).value })} style={{ flex: 1, background: TEAL, color: "white", border: "none", padding: "8px", borderRadius: "6px", cursor: "pointer" }}>Sauver</button>
+                      <button onClick={() => { if(confirm("Supprimer?")) handleSaveKPI(null, null, siteData.kpis.filter((_, idx) => idx !== i)) }} style={{ background: "#fee2e2", color: "#ef4444", border: "none", padding: "8px", borderRadius: "6px", cursor: "pointer" }}>🗑️</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {subTab === "axes" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              {siteData.axes.map((axe, i) => (
+                <div key={i} className="admin-card" style={{ borderLeft: `6px solid ${axe.color}` }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "15px" }}>
+                    <div className="form-group"><label>Icône</label><input className="form-control" id={`axe-i-${i}`} defaultValue={axe.icon} /></div>
+                    <div className="form-group"><label>Titre</label><input className="form-control" id={`axe-t-${i}`} defaultValue={axe.title} /></div>
+                    <div className="form-group"><label>Tag</label><input className="form-control" id={`axe-g-${i}`} defaultValue={axe.tag} /></div>
+                  </div>
+                  <div className="form-group"><label>Assertion</label><textarea className="form-control" id={`axe-a-${i}`} defaultValue={axe.assertion} /></div>
+                  <button onClick={() => handleSaveAxe(i, { ...axe, icon: document.getElementById(`axe-i-${i}`).value, title: document.getElementById(`axe-t-${i}`).value, tag: document.getElementById(`axe-g-${i}`).value, assertion: document.getElementById(`axe-a-${i}`).value })} style={{ background: TEAL, color: "white", border: "none", padding: "10px", borderRadius: "6px", cursor: "pointer", fontWeight: "700" }}>Enregistrer les modifications</button>
+                </div>
+              ))}
+              <button onClick={() => handleSaveAxe(null, null, [...siteData.axes, { id: Date.now(), tag: "NOUVEAU", title: "Titre", icon: "✨", color: TEAL, assertion: "", bullets: [], implication: "", sources: "" }])} className="btn-primary">Ajouter un Axe Thématique</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "config" && (
+        <div className="glass" style={{ padding: "32px", borderRadius: "16px" }}>
+          <h3 style={{ fontSize: "20px", fontWeight: "700", marginBottom: "25px" }}>Configuration Globale du Site</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "30px" }}>
+            <div className="form-group">
+              <label>Titre du Site</label>
+              <input className="form-control" id="conf-title" defaultValue={siteData.settings?.title || "IA WATCH"} />
+            </div>
+            <div className="form-group">
+              <label>Émoji Logo</label>
+              <input className="form-control" id="conf-emoji" defaultValue={siteData.settings?.emoji || "📡"} />
+            </div>
           </div>
+          <div className="form-group">
+            <label>Sous-titre (Landing Page)</label>
+            <textarea className="form-control" id="conf-sub" defaultValue={siteData.settings?.subtitle || "Impact de l'IA sur l'économie..."} />
+          </div>
+          <button 
+            onClick={async () => {
+              const settings = {
+                title: document.getElementById("conf-title").value,
+                emoji: document.getElementById("conf-emoji").value,
+                subtitle: document.getElementById("conf-sub").value,
+              };
+              setSaving(true);
+              onUpdateData({ ...siteData, settings });
+              if (supabaseClient) {
+                await supabaseClient.from('site_content').upsert({ key: 'settings', value: settings });
+              }
+              setSaving(false);
+            }}
+            className="btn-primary" style={{ width: "100%", marginTop: "10px" }}
+          >
+            Sauvegarder la Configuration Globale
+          </button>
         </div>
       )}
 
@@ -831,7 +839,12 @@ function App() {
   const [siteData, setSiteData] = useState({
     kpis: kpis,
     axes: axes,
-    perspectives: perspectives
+    perspectives: perspectives,
+    settings: {
+      title: "IA WATCH",
+      emoji: "📡",
+      subtitle: "Impact de l'IA sur l'économie, les entreprises et l'emploi"
+    }
   });
 
   useEffect(() => {
@@ -861,6 +874,7 @@ function App() {
           if (item.key === 'kpis') newData.kpis = item.value;
           if (item.key === 'axes') newData.axes = item.value;
           if (item.key === 'perspectives') newData.perspectives = item.value;
+          if (item.key === 'settings') newData.settings = item.value;
         });
         setSiteData(newData);
       }
@@ -913,13 +927,13 @@ function App() {
           <div style={{
             fontSize: 42, marginBottom: 8,
           }}>
-            📡
+            {siteData.settings.emoji}
           </div>
           <div style={{
             fontSize: 32, fontWeight: 800, letterSpacing: "0.12em",
             textTransform: "uppercase", marginBottom: 14,
           }}>
-            <span style={{ color: TEAL }}>IA</span><span style={{ color: NAVY }}> WATCH</span>
+            <span style={{ color: TEAL }}>{siteData.settings.title.slice(0, 2)}</span><span style={{ color: NAVY }}>{siteData.settings.title.slice(2)}</span>
           </div>
           <div style={{
             fontSize: 20, fontWeight: 600, color: SLATE, lineHeight: 1.35,
@@ -1041,7 +1055,7 @@ function App() {
             Sofinco / MCD
           </div>
           <div style={{ fontSize: 17, fontWeight: 700, color: NAVY, marginTop: 2 }}>
-            IA Watch — Mai 2026
+            {siteData.settings.title} — Mai 2026
           </div>
         </div>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
