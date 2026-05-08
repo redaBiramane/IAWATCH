@@ -14,12 +14,12 @@ const key = process.env.SUPABASE_ANON_KEY || '';
 content = content.replace(/__SUPABASE_URL__/g, url);
 content = content.replace(/__SUPABASE_ANON_KEY__/g, key);
 
-// Création du dossier dist si nécessaire
-if (!fs.existsSync('dist')) {
-  fs.mkdirSync('dist');
+// Création du dossier public si nécessaire
+if (!fs.existsSync('public')) {
+  fs.mkdirSync('public');
 }
 
-// Écriture du fichier final dans dist/
-fs.writeFileSync(path.join(__dirname, 'dist', 'index.html'), content);
+// Écriture du fichier final dans public/
+fs.writeFileSync(path.join(__dirname, 'public', 'index.html'), content);
 
-console.log('✅ Build réussi : index.html généré dans le dossier dist/');
+console.log('✅ Build réussi : index.html généré dans le dossier public/');
