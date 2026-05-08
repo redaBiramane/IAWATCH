@@ -914,7 +914,15 @@ function App() {
         padding: "40px 20px",
       }}>
         {/* Top bar with logout */}
-        <div style={{ position: "absolute", top: 20, right: 20 }}>
+        <div style={{ position: "absolute", top: 20, right: 20, display: "flex", gap: "20px", alignItems: "center" }}>
+          {session?.user?.email?.includes('admin') && (
+            <button 
+              onClick={() => setIsAdminView(true)} 
+              style={{ background: "#00959715", border: "1px solid #00959730", color: TEAL, padding: "6px 12px", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "700" }}
+            >
+              Console Admin ⚙️
+            </button>
+          )}
           {session && (
             <button onClick={handleLogout} style={{ background: "none", border: "none", color: SLATE, cursor: "pointer", fontSize: "12px", fontWeight: "600" }}>
               Déconnexion
@@ -1011,21 +1019,8 @@ function App() {
               transition: "all 0.25s ease",
             }}
           >
-            Explorer →
+            Explorer le rapport →
           </button>
-          
-          {session?.user?.email?.includes('admin') && (
-            <button
-              onClick={() => setIsAdminView(true)}
-              style={{
-                padding: "14px 24px", borderRadius: 10,
-                border: `2px solid ${TEAL}`, background: "white", color: TEAL,
-                fontSize: 15, fontWeight: 700, cursor: "pointer",
-              }}
-            >
-              Admin Dashboard
-            </button>
-          )}
         </div>
 
         {/* Footer */}
