@@ -3,15 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>📡 IA Watch — Rapport Stratégique</title>
+<title>📡 IA Watch — Rapport Stratégique Complet</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #F5F6F8; color: #071621; }
-  .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); }
-  .input-field { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #ddd; background: #fff; color: #333; margin-bottom: 15px; }
   .btn-primary { background: #009597; color: white; padding: 12px 24px; border-radius: 10px; border: none; font-weight: 800; cursor: pointer; transition: 0.3s; }
   .admin-card { background: white; padding: 25px; border-radius: 16px; border: 1px solid #e0e2e8; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
   .form-control { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 10px; font-family: inherit; font-size: 14px; }
+  .input-field { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #ddd; background: #fff; margin-bottom: 15px; }
   @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
@@ -35,39 +34,89 @@ const supabaseClient = (SUPABASE_URL && SUPABASE_URL.startsWith('http'))
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
 
-// --- LE CONTENU STRATÉGIQUE (SAUVEGARDÉ ICI) ---
-const STRATEGIC_CONTENT = {
+// --- LE CONTENU STRATÉGIQUE COMPLET ---
+const FULL_CONTENT = {
   kpis: [
-    { value: "$2 520 Mds", label: "Dépenses IA mondiales 2026", sub: "+44% YoY" },
-    { value: "28%", label: "Taux de succès ROI", sub: "use cases I&O" },
-    { value: "17%", label: "Déploiement réel d'agents", sub: "vs 60%+ prévu" },
-    { value: "50%", label: "CEOs dont le poste dépend du succès IA", sub: "Décideurs principaux" }
+    { value: "$2 520 Mds", label: "Dépenses IA mondiales 2026", sub: "+44% YoY", source: "Gartner" },
+    { value: "28%", label: "Taux de succès ROI", sub: "use cases I&O", source: "Gartner" },
+    { value: "17%", label: "Organisations ayant déployé des agents", sub: "vs 60%+ prévu", source: "Gartner" },
+    { value: "50%", label: "CEOs dont le poste dépend du succès IA", sub: "Décideurs principaux", source: "BCG" }
   ],
   axes: [
     {
       id: 1, color: "#009597", icon: "🤖", tag: "AXE 1", title: "Agents autonomes & gouvernance",
       assertion: "60% d'intention de déploiement mais 17% de réalité.",
-      bullets: ["30% du budget IA 2026 alloué à l'agentique", "Focus sur l'identité non-humaine et la gouvernance"],
-      implication: "Poser les fondations avant la prolifération."
+      bullets: [
+        "30% du budget IA 2026 alloué à l'agentique",
+        "La valeur se mesure en contexte retenu et rework éliminé",
+        "Le sujet bascule de la création d'agents à leur gouvernance"
+      ],
+      implication: "Poser les fondations avant la prolifération : registre d'agents, gestion d'identité machine.",
+      sources: "BCG, Gartner, Bain"
     },
     {
       id: 2, color: "#E07A2F", icon: "📉", tag: "AXE 2", title: "Le paradoxe ROI",
-      assertion: "Investissements records mais peu de valeur transformationnelle immédiate.",
-      bullets: ["Doublage des dépenses IA en 2026", "57% des échecs liés à des attentes irréalistes"],
-      implication: "Mesurer par processus transformé, pas par POC."
+      assertion: "Investissements records mais seulement 1 projet sur 50 délivre une valeur transformationnelle.",
+      bullets: [
+        "Les entreprises prévoient de doubler leurs dépenses IA en 2026 (~1,7% du CA)",
+        "57% des échecs liés à des attentes irréalistes",
+        "L'IA entre dans le « Trough of Disillusionment »"
+      ],
+      implication: "Mesurer par processus transformé, pas par POC livré.",
+      sources: "BCG, Gartner, MIT Sloan"
     },
     {
-      id: 3, color: "#F47682", icon: "🧠", tag: "AXE 3", title: "Facteur humain & Compétences",
-      assertion: "L'IA intensifie le travail plutôt qu'elle ne le réduit.",
-      bullets: ["50% des emplois US transformés d'ici 2-3 ans", "L'IA ajoute de la charge cognitive (vérification)"],
-      implication: "Construire des dispositifs de jugement critique."
+      id: 3, color: "#F47682", icon: "🧠", tag: "AXE 3", title: "Compétences & facteur humain",
+      assertion: "L'IA amplifie les écarts (+15% pour les forts, −10% pour les faibles).",
+      bullets: [
+        "50-55% des emplois US transformés d'ici 2-3 ans",
+        "L'IA ajoute de la charge cognitive (vérification, incertitude)",
+        "Risque de « deskilling silencieux »"
+      ],
+      implication: "Construire des dispositifs de jugement critique et validation humaine.",
+      sources: "BCG, HBR, MIT Sloan"
+    },
+    {
+      id: 4, color: "#3A7CC3", icon: "⚡", tag: "AXE 4", title: "Infrastructure & économie",
+      assertion: "L'inférence dépassera l'entraînement d'ici 2030.",
+      bullets: [
+        "L'inférence représentera 40%+ de la demande data center d'ici 2030",
+        "Clusters de 100k+ GPUs nécessaires pour les modèles frontières",
+        "Compétition féroce sur le coût et la fiabilité"
+      ],
+      implication: "Repenser les architectures data pour le temps quasi réel.",
+      sources: "McKinsey, MIT Tech Review"
+    },
+    {
+      id: 5, color: "#7030A0", icon: "🌍", tag: "AXE 5", title: "Souveraineté & géopolitique",
+      assertion: "L'écart entre modèles chinois et occidentaux se réduit.",
+      bullets: [
+        "Usage croissant de modèles chinois open-source en 2026",
+        "IA souveraine européenne (Mistral/Accenture)",
+        "Trilemme : Performance vs Contrôle vs Coût"
+      ],
+      implication: "Arbitrer entre US (performance), Europe (contrôle) et Chine (coût).",
+      sources: "MIT Tech Review, McKinsey"
+    },
+    {
+      id: 6, color: "#071621", icon: "🛡️", tag: "AXE 6", title: "IA responsable & risques",
+      assertion: "2 000+ plaintes « death by AI » prédites d'ici fin 2026.",
+      bullets: [
+        "Explicabilité et design éthique deviennent non négociables",
+        "Sécurité agentique : identité, monitoring, circuit-breakers",
+        "Maturité RAI encore faible (moyenne 2.3/5)"
+      ],
+      implication: "Extension de la RAI aux impacts sur la force de travail.",
+      sources: "Gartner, McKinsey, MIT Sloan"
     }
   ],
   perspectives: [
-    { type: "Hypothèse", text: "Le creux de désillusion se prolonge au S2 2026.", color: "#E07A2F" },
-    { type: "Signal faible", text: "Émergence du rôle 'Agent Operations Officer'.", color: "#F47682" }
+    { type: "Hypothèse", text: "Le creux de désillusion se prolonge au S2 2026 — correction des valorisations.", color: "#E07A2F" },
+    { type: "Hypothèse", text: "L'IA agentique ne sera pas mainstream avant 2028.", color: "#E07A2F" },
+    { type: "Signal faible", text: "Émergence du rôle « Agent Operations Officer ».", color: "#F47682" },
+    { type: "Signal faible", text: "Convergence intensification du travail + atrophie des compétences.", color: "#F47682" }
   ],
-  settings: { title: "IA WATCH", emoji: "📡", subtitle: "Synthèse stratégique exclusive pour Sofinco / MCD." }
+  settings: { title: "IA WATCH", emoji: "📡", subtitle: "Synthèse stratégique exclusive de 50 publications 2026." }
 };
 
 // --- Composants UI ---
@@ -76,7 +125,7 @@ const AxeCard = ({ axe }) => {
   return (
     <div onClick={() => setIsOpen(!isOpen)} style={{ background: "#fff", borderRadius: 16, border: `1.5px solid ${isOpen ? (axe.color || TEAL) : "#eee"}`, padding: "24px", cursor: "pointer", transition: "0.3s", marginBottom: "15px", animation: "fadeInUp 0.5s ease" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-        <div style={{ fontSize: 24, background: `${axe.color || TEAL}15`, padding: 12, borderRadius: 12 }}>{axe.icon || "🤖"}</div>
+        <div style={{ fontSize: 24, background: `${axe.color || TEAL}15`, padding: 10, borderRadius: 12 }}>{axe.icon || "🤖"}</div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 10, fontWeight: 900, color: axe.color || TEAL }}>{axe.tag}</div>
           <div style={{ fontSize: 18, fontWeight: 800, color: NAVY }}>{axe.title}</div>
@@ -87,8 +136,9 @@ const AxeCard = ({ axe }) => {
           {axe.bullets && axe.bullets.map((b, i) => <div key={i} style={{ fontSize: 14, marginBottom: 10, lineHeight: 1.5 }}>• {b}</div>)}
           <div style={{ background: `${axe.color || TEAL}08`, padding: 15, borderRadius: 10, marginTop: 15 }}>
              <div style={{ fontSize: 10, fontWeight: 800, color: axe.color || TEAL, marginBottom: 5 }}>IMPLICATION</div>
-             <div style={{ fontSize: 14 }}>{axe.implication}</div>
+             <div style={{ fontSize: 14, fontWeight: 500 }}>{axe.implication}</div>
           </div>
+          <div style={{ fontSize: 10, color: SLATE, marginTop: 10 }}>Sources : {axe.sources}</div>
         </div>
       )}
     </div>
@@ -98,7 +148,7 @@ const AxeCard = ({ axe }) => {
 // --- Pages ---
 const WelcomeScreen = ({ onExplore, siteData }) => (
   <div style={{ minHeight: "100vh", background: "#071621", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 20px", textAlign: "center" }}>
-    <div style={{ maxWidth: "800px" }}>
+    <div style={{ maxWidth: "900px" }}>
       <div style={{ fontSize: 70, marginBottom: 20 }}>{siteData.settings.emoji}</div>
       <h1 style={{ fontSize: "clamp(40px, 8vw, 80px)", fontWeight: 900, marginBottom: 25 }}>{siteData.settings.title}</h1>
       <p style={{ fontSize: 22, color: "#A0AEC0", marginBottom: 50 }}>{siteData.settings.subtitle}</p>
@@ -121,7 +171,7 @@ const LoginPage = ({ onBack }) => {
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#071621", padding: "20px" }}>
       <div style={{ background: "white", padding: "45px", borderRadius: "24px", width: "100%", maxWidth: "420px" }}>
         <button onClick={onBack} style={{ background: "none", border: "none", color: TEAL, cursor: "pointer", marginBottom: "25px", fontWeight: "800" }}>← RETOUR</button>
-        <h2 style={{ fontSize: 26, marginBottom: 30, color: NAVY, textAlign: "center" }}>Accès Membre</h2>
+        <h2 style={{ fontSize: 26, marginBottom: 30, color: NAVY, textAlign: "center" }}>Connexion Membre</h2>
         <form onSubmit={handleLogin}>
           <input className="input-field" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
           <input className="input-field" type="password" placeholder="Mot de passe" value={password} onChange={e => setPassword(e.target.value)} required />
@@ -142,15 +192,15 @@ const AdminDashboard = ({ user, onBack, siteData, onUpdateData }) => {
   return (
     <div style={{ padding: "40px", maxWidth: "1200px", margin: "0 auto" }}>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 40 }}>
-        <button onClick={onBack} className="btn-primary">← Retour au Rapport</button>
-        <h1 style={{ fontWeight: 900 }}>Console Admin</h1>
-        <div style={{ textAlign: "right" }}><div style={{ fontSize: 10, color: SLATE }}>ADMINISTRATEUR</div><div style={{ fontWeight: 700 }}>{user.email}</div></div>
+        <button onClick={onBack} className="btn-primary">← Retour</button>
+        <h1 style={{ fontWeight: 900 }}>Admin</h1>
+        <div style={{ textAlign: "right" }}><div style={{ fontSize: 10, color: SLATE }}>SESSION</div><div style={{ fontWeight: 700 }}>{user.email}</div></div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 30 }}>
         <div className="admin-card">
            <h3>Configuration</h3>
            <div style={{ marginTop: 20 }}>
-             <label style={{ fontSize: 11, fontWeight: 800 }}>TITRE DU SITE</label>
+             <label style={{ fontSize: 11, fontWeight: 800 }}>TITRE</label>
              <input className="form-control" id="site-title" defaultValue={siteData.settings.title} />
              <button className="btn-primary" style={{ width: "100%" }} onClick={() => {
                 const settings = { ...siteData.settings, title: document.getElementById('site-title').value };
@@ -160,16 +210,16 @@ const AdminDashboard = ({ user, onBack, siteData, onUpdateData }) => {
            </div>
         </div>
         <div className="admin-card">
-           <h3>Éditeur d'Axes (JSON)</h3>
+           <h3>Éditeur JSON</h3>
            <textarea className="form-control" style={{ height: 400, fontSize: 12, fontFamily: "monospace" }} id="axes-json" defaultValue={JSON.stringify(siteData.axes, null, 2)} />
            <button className="btn-primary" onClick={() => {
               try {
                 const axes = JSON.parse(document.getElementById('axes-json').value);
                 onUpdateData({ ...siteData, axes });
                 save('axes', axes);
-                alert("Contenu synchronisé !");
+                alert("Synchronisé !");
               } catch(e) { alert("Erreur JSON"); }
-           }}>Synchroniser les Axes</button>
+           }}>Mettre à jour</button>
         </div>
       </div>
     </div>
@@ -182,7 +232,7 @@ const App = () => {
   const [loading, setLoading] = useState(true);
   const [showWelcome, setShowWelcome] = useState(true);
   const [isAdminView, setIsAdminView] = useState(false);
-  const [siteData, setSiteData] = useState(STRATEGIC_CONTENT);
+  const [siteData, setSiteData] = useState(FULL_CONTENT);
   const [section, setSection] = useState("axes");
 
   useEffect(() => {
@@ -193,7 +243,7 @@ const App = () => {
     const fetchData = async () => {
       const { data } = await supabaseClient.from('site_content').select('*');
       if (data && data.length > 0) {
-        const update = { ...STRATEGIC_CONTENT };
+        const update = { ...FULL_CONTENT };
         data.forEach(d => { if (d.value) update[d.key] = d.value; });
         setSiteData(update);
       }
@@ -202,7 +252,7 @@ const App = () => {
   }, []);
 
   if (showWelcome && !session) return <WelcomeScreen onExplore={() => setShowWelcome(false)} siteData={siteData} />;
-  if (loading) return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900 }}>CHARGEMENT IA WATCH...</div>;
+  if (loading) return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900 }}>CHARGEMENT...</div>;
   if (!session) return <LoginPage onBack={() => setShowWelcome(true)} />;
   if (isAdminView && session.user.email.includes('admin')) return <AdminDashboard user={session.user} onBack={() => setIsAdminView(false)} siteData={siteData} onUpdateData={setSiteData} />;
 
