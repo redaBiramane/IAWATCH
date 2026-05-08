@@ -902,27 +902,10 @@ function App() {
   });
 
   useEffect(() => {
-    if (supabaseClient) {
-      // 1. Auth session
-      supabaseClient.auth.getSession().then(({ data: { session } }) => {
-        setSession(session);
-      });
-
-      const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((_event, session) => {
-        setSession(session);
-      });
-
-      // 2. Fetch site content
-      fetchSiteContent();
-
-      return () => subscription.unsubscribe();
-    }
-  }, []);
-
-  const fetchSiteContent = async () => {
-    try {
+    const fetchSiteContent = async () => {
+      if (!supabaseClient) return;
       const { data, error } = await supabaseClient.from('site_content').select('*');
-      if (data && !error) {
+      if (!error && data) {
         const newData = { ...siteData };
         data.forEach(item => {
           if (item.key === 'kpis') newData.kpis = item.value;
@@ -932,209 +915,43 @@ function App() {
         });
         setSiteData(newData);
       }
-    } catch (err) {
-      console.warn("Using default content (Supabase table 'site_content' not found yet)");
-    }
-  };
+    };
+    fetchSiteContent();
+  }, []);
 
   const handleLogout = async () => {
-    if (supabaseClient) {
-      await supabaseClient.auth.signOut();
-      setSession(null);
-      setIsAdminView(false);
-    }
+    await supabaseClient.auth.signOut();
+    setShowWelcome(true);
+    setIsAdminView(false);
   };
 
-  if (!session && (SUPABASE_URL !== "YOUR_SUPABASE_URL")) {
-    return <Login onLogin={(user) => setSession({ user })} />;
-  }
-
-  if (isAdminView) {
-    return <AdminDashboard 
-      user={session?.user} 
-      onBack={() => setIsAdminView(false)} 
-      siteData={siteData}
-      onUpdateData={(newData) => setSiteData(newData)}
-    />;
-  }
-
-  const WelcomeScreen = ({ onExplore, onLogin, siteData }) => {
-  return (
-    <div style={{
-      minHeight: "100vh",
-      width: "100%",
-      background: "#071621",
-      color: "#fff",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "40px 20px",
-      position: "relative",
-      overflow: "hidden",
-    }}>
-      {/* Background Animations */}
-      <div style={{
-        position: "absolute", top: "-10%", left: "-10%", width: "40%", height: "40%",
-        background: "radial-gradient(circle, rgba(0,149,151,0.15) 0%, rgba(0,0,0,0) 70%)",
-        animation: "float 15s infinite alternate",
-      }}></div>
-      <div style={{
-        position: "absolute", bottom: "-10%", right: "-10%", width: "50%", height: "50%",
-        background: "radial-gradient(circle, rgba(0,149,151,0.1) 0%, rgba(0,0,0,0) 70%)",
-        animation: "float 20s infinite alternate-reverse",
-      }}></div>
-
-      <div style={{ position: "relative", zIndex: 1, textAlign: "center", maxWidth: "1000px", width: "100%" }}>
-        
-        {/* Header / Logo Section */}
-        <div style={{ animation: "fadeInUp 0.8s ease-out" }}>
-          <div style={{ fontSize: "60px", marginBottom: "20px" }}>{siteData.settings.emoji}</div>
-          <h1 style={{ 
-            fontSize: "clamp(40px, 8vw, 72px)", 
-            fontWeight: "900", 
-            letterSpacing: "-0.02em",
-            lineHeight: 1.1,
-            marginBottom: "20px"
-          }}>
-            <span style={{ color: TEAL }}>{siteData.settings.title.split(' ')[0]}</span> {siteData.settings.title.split(' ').slice(1).join(' ')}
-          </h1>
-          <p style={{ 
-            fontSize: "clamp(18px, 4vw, 24px)", 
-            color: "#A0AEC0", 
-            maxWidth: "700px", 
-            margin: "0 auto 40px",
-            lineHeight: 1.5,
-            fontWeight: "500"
-          }}>
-            {siteData.settings.subtitle}
-          </p>
-        </div>
-
-        {/* Action Buttons */}
-        <div style={{ 
-          display: "flex", 
-          gap: "20px", 
-          justifyContent: "center", 
-          marginBottom: "80px",
-          animation: "fadeInUp 1s ease-out 0.2s both"
-        }}>
-          <button onClick={onExplore} className="landing-btn-primary">
-            Explorer le Rapport
-          </button>
-          <button onClick={onLogin} className="landing-btn-secondary">
-            Accès Membre
-          </button>
-        </div>
-
-        {/* KPI Grid */}
-        <div style={{ 
-          display: "grid", 
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", 
-          gap: "20px", 
-          marginBottom: "80px",
-          animation: "fadeInUp 1.2s ease-out 0.4s both"
-        }}>
-          {siteData.kpis.slice(0, 4).map((k, i) => (
-            <div key={i} className="landing-kpi-card">
-              <div style={{ fontSize: "28px", fontWeight: "800", color: TEAL, marginBottom: "8px" }}>{k.value}</div>
-              <div style={{ fontSize: "13px", color: "#CBD5E0", fontWeight: "600", lineHeight: 1.3 }}>{k.label}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Sources Section */}
-        <div style={{ animation: "fadeInUp 1.4s ease-out 0.6s both" }}>
-          <div style={{ fontSize: "11px", color: "#718096", textTransform: "uppercase", fontWeight: "700", letterSpacing: "0.2em", marginBottom: "25px" }}>
-            SYNTHÈSE DE 50+ PUBLICATIONS ISSUES DE
-          </div>
-          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "12px" }}>
-            {["McKinsey", "BCG", "Bain", "Accenture", "Gartner", "MIT Sloan", "Wharton", "HBR"].map(s => (
-              <span key={s} style={{ 
-                padding: "8px 16px", 
-                borderRadius: "30px", 
-                background: "rgba(255,255,255,0.05)", 
-                border: "1px solid rgba(255,255,255,0.1)",
-                fontSize: "12px",
-                fontWeight: "600",
-                color: "#A0AEC0"
-              }}>
-                {s}
-              </span>
-            ))}
-          </div>
-        </div>
-
-      </div>
-
-      <style>{`
-        @keyframes float {
-          0% { transform: translate(0, 0); }
-          100% { transform: translate(30px, 30px); }
-        }
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .landing-btn-primary {
-          padding: 16px 40px;
-          border-radius: 12px;
-          border: none;
-          background: ${TEAL};
-          color: white;
-          font-size: 16px;
-          font-weight: 700;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow: 0 0 20px ${TEAL}60;
-        }
-        .landing-btn-primary:hover {
-          transform: translateY(-3px);
-          box-shadow: 0 0 30px ${TEAL}90;
-        }
-        .landing-btn-secondary {
-          padding: 16px 40px;
-          border-radius: 12px;
-          border: 1px solid rgba(255,255,255,0.2);
-          background: rgba(255,255,255,0.05);
-          color: white;
-          font-size: 16px;
-          font-weight: 700;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-        .landing-btn-secondary:hover {
-          background: rgba(255,255,255,0.1);
-          border-color: rgba(255,255,255,0.4);
-        }
-        .landing-kpi-card {
-          padding: 24px;
-          background: rgba(255,255,255,0.03);
-          border-radius: 16px;
-          border: 1px solid rgba(255,255,255,0.05);
-          backdrop-filter: blur(10px);
-          transition: all 0.3s ease;
-        }
-        .landing-kpi-card:hover {
-          transform: translateY(-5px);
-          background: rgba(255,255,255,0.06);
-          border-color: ${TEAL}40;
-        }
-      `}</style>
-    </div>
-  );
-};
+  const handleUpdateData = (newData) => {
+    setSiteData(newData);
+  };
 
   if (showWelcome) {
     return (
       <WelcomeScreen 
         onExplore={() => setShowWelcome(false)} 
-        onLogin={() => {
-          // If already logged in, just explore, otherwise we'll stay here for login
-          if (session) setShowWelcome(false);
-          else setShowWelcome(false); // Auth is handled by the wrapper, so we just enter
-        }}
+        onLogin={() => setShowWelcome(false)}
         siteData={siteData}
+      />
+    );
+  }
+
+  if (authLoading) return <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", background: "#071621", color: "white" }}>Chargement...</div>;
+  
+  if (!session) {
+    return <LoginPage onBack={() => setShowWelcome(true)} />;
+  }
+
+  if (isAdminView && session.user.email.includes('admin')) {
+    return (
+      <AdminDashboard 
+        user={session.user} 
+        onBack={() => setIsAdminView(false)} 
+        siteData={siteData}
+        onUpdateData={handleUpdateData}
       />
     );
   }
@@ -1146,7 +963,6 @@ function App() {
       fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
       color: NAVY,
     }}>
-      {/* Header */}
       <div style={{
         background: "#fff",
         borderBottom: `2px solid ${TEAL}`,
@@ -1165,6 +981,14 @@ function App() {
           </div>
         </div>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          {session?.user?.email?.includes('admin') && (
+            <button 
+              onClick={() => setIsAdminView(true)} 
+              style={{ background: "#00959715", border: "1px solid #00959730", color: TEAL, padding: "6px 12px", borderRadius: "6px", cursor: "pointer", fontSize: "12px", fontWeight: "700", marginRight: "10px" }}
+            >
+              Console Admin ⚙️
+            </button>
+          )}
           <button onClick={handleLogout} style={{
             padding: "6px 12px", borderRadius: 6, border: "1px solid #ddd", cursor: "pointer",
             fontSize: 12, fontWeight: 600, background: "white", color: SLATE,
@@ -1179,11 +1003,11 @@ function App() {
             { key: "sources", label: "Sources" },
           ].map(({ key, label }) => (
             <button key={key} onClick={() => setSection(key)} style={{
-              padding: "6px 14px", borderRadius: 6, border: "none", cursor: "pointer",
-              fontSize: 12, fontWeight: 600,
-              background: section === key ? TEAL : "#ECEDF0",
+              padding: "8px 16px", borderRadius: 8, border: "none",
+              background: section === key ? TEAL : "transparent",
               color: section === key ? "#fff" : SLATE,
-              transition: "all 0.2s ease",
+              fontWeight: 700, cursor: "pointer", fontSize: 13,
+              transition: "all 0.2s ease"
             }}>
               {label}
             </button>
