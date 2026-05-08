@@ -374,30 +374,82 @@ const AdminDashboard = ({ user, onBack, siteData, onUpdateData }) => {
 
       {activeTab === "stats" && (
         <div style={{ animation: "fadeIn 0.3s ease" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "25px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "25px", marginBottom: "30px" }}>
             <div className="admin-card" style={{ borderTop: `4px solid ${TEAL}` }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ fontSize: "14px", color: SLATE, fontWeight: "600" }}>Total Utilisateurs</div>
                 <div style={{ fontSize: "24px" }}>👥</div>
               </div>
               <div style={{ fontSize: "36px", fontWeight: "800", color: NAVY, margin: "10px 0" }}>{stats.totalUsers}</div>
-              <div style={{ fontSize: "12px", color: GREEN, fontWeight: "600" }}>↑ Actifs sur le site</div>
+              <div style={{ fontSize: "12px", color: GREEN, fontWeight: "700" }}>
+                {stats.totalUsers > 0 ? "↑ 100%" : "0%"} <span style={{ fontWeight: "400", color: SLATE }}>croissance globale</span>
+              </div>
             </div>
             <div className="admin-card" style={{ borderTop: `4px solid ${ORANGE}` }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ fontSize: "14px", color: SLATE, fontWeight: "600" }}>Nouveaux (24h)</div>
+                <div style={{ fontSize: "14px", color: SLATE, fontWeight: "600" }}>Inscriptions (24h)</div>
                 <div style={{ fontSize: "24px" }}>✨</div>
               </div>
               <div style={{ fontSize: "36px", fontWeight: "800", color: NAVY, margin: "10px 0" }}>{stats.newToday}</div>
-              <div style={{ fontSize: "12px", color: SLATE }}>Inscriptions récentes</div>
-            </div>
-            <div className="admin-card" style={{ borderTop: `4px solid ${BLUE}` }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ fontSize: "14px", color: SLATE, fontWeight: "600" }}>Rapport IA Watch</div>
-                <div style={{ fontSize: "24px" }}>📊</div>
+              <div style={{ fontSize: "12px", color: stats.newToday > 0 ? GREEN : SLATE, fontWeight: "700" }}>
+                {stats.newToday > 0 ? "↑ Active" : "Stable"} <span style={{ fontWeight: "400", color: SLATE }}>activité récente</span>
               </div>
-              <div style={{ fontSize: "36px", fontWeight: "800", color: NAVY, margin: "10px 0" }}>{siteData.axes.length}</div>
-              <div style={{ fontSize: "12px", color: SLATE }}>Axes thématiques actifs</div>
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "25px" }}>
+            {/* Graphique d'évolution (Linéaire) */}
+            <div className="admin-card">
+              <h4 style={{ marginBottom: "20px", fontSize: "16px", fontWeight: "700" }}>Évolution des inscriptions (7 derniers jours)</h4>
+              <div style={{ height: "200px", width: "100%", position: "relative", display: "flex", alignItems: "flex-end", gap: "10px", paddingBottom: "20px" }}>
+                {[...Array(7)].map((_, i) => {
+                  const day = new Date();
+                  day.setDate(day.getDate() - (6 - i));
+                  const dateStr = day.toISOString().split('T')[0];
+                  const count = users.filter(u => u.created_at.startsWith(dateStr)).length;
+                  const height = stats.totalUsers > 0 ? (count / stats.totalUsers) * 150 + 10 : 10;
+                  return (
+                    <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
+                      <div style={{ 
+                        width: "100%", 
+                        height: `${height}px`, 
+                        background: `linear-gradient(to top, ${TEAL}, ${TEAL}88)`, 
+                        borderRadius: "6px 6px 0 0",
+                        transition: "height 0.5s ease"
+                      }}></div>
+                      <div style={{ fontSize: "10px", color: SLATE, fontWeight: "600" }}>{day.toLocaleDateString('fr-FR', { weekday: 'short' })}</div>
+                    </div>
+                  );
+                })}
+                <div style={{ position: "absolute", left: 0, right: 0, bottom: "19px", height: "1px", background: "#eee" }}></div>
+              </div>
+            </div>
+
+            {/* Répartition des rôles (Donut) */}
+            <div className="admin-card" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+              <h4 style={{ marginBottom: "20px", fontSize: "16px", fontWeight: "700", width: "100%" }}>Rôles</h4>
+              <div style={{ position: "relative", width: "120px", height: "120px" }}>
+                <svg viewBox="0 0 36 36" style={{ transform: "rotate(-90deg)" }}>
+                  <circle cx="18" cy="18" r="16" fill="none" stroke="#eee" strokeWidth="3"></circle>
+                  <circle 
+                    cx="18" cy="18" r="16" fill="none" stroke={TEAL} strokeWidth="3" 
+                    strokeDasharray={`${(users.filter(u => u.is_admin).length / (users.length || 1)) * 100} 100`}
+                  ></circle>
+                </svg>
+                <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", textAlign: "center" }}>
+                  <div style={{ fontSize: "18px", fontWeight: "800", color: NAVY }}>{users.filter(u => u.is_admin).length}</div>
+                  <div style={{ fontSize: "9px", color: SLATE, textTransform: "uppercase" }}>Admins</div>
+                </div>
+              </div>
+              <div style={{ marginTop: "20px", width: "100%" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "5px" }}>
+                  <span style={{ color: SLATE }}>Utilisateurs standards</span>
+                  <span style={{ fontWeight: "700" }}>{users.filter(u => !u.is_admin).length}</span>
+                </div>
+                <div style={{ height: "4px", background: "#eee", borderRadius: "2px", overflow: "hidden" }}>
+                  <div style={{ width: `${(users.filter(u => !u.is_admin).length / (users.length || 1)) * 100}%`, height: "100%", background: SLATE }}></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
